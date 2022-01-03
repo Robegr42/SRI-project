@@ -8,18 +8,17 @@ This class will create a folder structure like:
 
     ./database/
     |__ [database_name]/
-        |__ texts.txt
+        |__ docs.json
         |__ metadata.json
 
 For example:
 
         ./database/
         |__ cran/
-            |__ texts.txt
+            |__ docs.json
             |__ metadata.json
 
-The ``texts.txt`` file will contain the text of the documents separated by
-``\\n..{i}\\n`` where ``{i}`` is the document index.
+The ``docs.json`` file will contain a the text of the documents.
 
 The ``metadata.json`` file will contain the metadata of each document in
 a list of dictionaries where each position in the list corresponds to the
@@ -58,7 +57,7 @@ class DatabaseCreator:
     def create(
         database_name: str,
         metadata: Any,
-        texts: List[str],
+        docs: List[str],
     ):
         """
         Create the database.
@@ -69,13 +68,13 @@ class DatabaseCreator:
             Name of the database.
         metadata : Any
             Dictionary of documents metadata.
-        texts : List[str]
-            List of documents texts.
+        docs : List[str]
+            List of documents.
         """
         database = DatabaseCreator(database_name)
-        database.create_db(metadata, texts)
+        database.create_db(metadata, docs)
 
-    def create_db(self, metadata: Any, texts: List[str]):
+    def create_db(self, metadata: Any, docs: List[str]):
         """
         Create the database.
 
@@ -83,12 +82,12 @@ class DatabaseCreator:
         ----------
         metadata : Any
             Dictionary of documents metadata.
-        texts : List[str]
-            List of documents texts.
+        docs : List[str]
+            List of documents.
         """
         self.database_path.mkdir(parents=True, exist_ok=True)
         self._create_metadata(metadata)
-        self._create_texts(texts)
+        self._create_docs(docs)
 
     def _create_metadata(self, metadata: dict):
         """
@@ -103,17 +102,15 @@ class DatabaseCreator:
         with open(str(metadata_path), "w", encoding="utf-8") as file:
             json.dump(metadata, file, ensure_ascii=False, indent=4)
 
-    def _create_texts(self, texts: List[str]):
+    def _create_docs(self, docs: List[str]):
         """
-        Create the documents texts.
+        Create the documents.
 
         Parameters
         ----------
-        texts : List[str]
-            List of documents texts.
+        docs : List[str]
+            List of documents.
         """
-        texts_path = self.database_path / "texts.txt"
-        with open(str(texts_path), "w", encoding="utf-8") as file:
-            for i, text in enumerate(texts):
-                file.write(f"\n..{i}\n")
-                file.write(text)
+        docs_path = self.database_path / "docs.json"
+        with open(str(docs_path), "w", encoding="utf-8") as file:
+            json.dump(docs, file, ensure_ascii=False, indent=4)
