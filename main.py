@@ -63,7 +63,11 @@ def main(
     ),
     rebuild: Optional[bool] = typer.Option(
         default=False,
-        help="Rebuild the index",
+        help="Rebuild the database (generate 'docs.json' and 'metadata.json')",
+    ),
+    reindex: Optional[bool] = typer.Option(
+        default=False,
+        help="Reindex the database (generate IR model)",
     ),
 ):
     """
@@ -76,9 +80,8 @@ def main(
     """
 
     # Load the model according to the database and rebuild parameters
-    status['db_name'] = database
-    cran_db_folder = Path("./database/{database}")
-    if not cran_db_folder.exists():
+    db_folder = Path(f"./database/{database}")
+    if not db_folder.exists() or rebuild:
         if not rebuild:
             raise typer.Exit(
                 f"The database '{database}' does not exist. Use the --rebuild\n"
@@ -95,8 +98,9 @@ def main(
         typer.echo(f"Rebuilding the '{database}' database")
         if database == "cran":
             create_cran_db()
+        status["model"] = IRModel(str(db_folder), True)
     else:
-        raise typer.Exit(f"Database '{database}' does not exists. Try --rebuild")
+        status["model"] = IRModel(str(db_folder), reindex)
 
     # Run the continuous queries command by default
     if ctx.invoked_subcommand is None:
