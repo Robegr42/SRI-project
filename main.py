@@ -2,14 +2,18 @@
 Main module for the application.
 """
 
+from pathlib import Path
 from typing import Optional
 
 import typer
 
+from cran_db_creator import create_db as create_cran_db
 from ir_model import IRModel
 from query import Query
 
 app = typer.Typer(add_completion=False)
+
+status = {}
 
 
 @app.command("test")
@@ -70,8 +74,29 @@ def main(
     Authors: Jorge Morgado Vega (jorge.morgadov@gmail.com) and Roberto
     García Rodríguez (roberto.garcia@estudiantes.matcom.uh.cu)
     """
+
     # Load the model according to the database and rebuild parameters
-    # ...
+    status['db_name'] = database
+    cran_db_folder = Path("./database/{database}")
+    if not cran_db_folder.exists():
+        if not rebuild:
+            raise typer.Exit(
+                f"The database '{database}' does not exist. Use the --rebuild\n"
+                "option to create it.\n\n"
+                "NOTE: The --rebuild option is only available for the\n"
+                "cran database."
+            )
+        if database not in ("cran",):
+            raise typer.Exit(
+                f"Rebuild not suported for database '{database}'.\n\n"
+                "Please build your own database using the 'DatabaseCreator'\n"
+                "class available in 'database_creator.py'"
+            )
+        typer.echo(f"Rebuilding the '{database}' database")
+        if database == "cran":
+            create_cran_db()
+    else:
+        raise typer.Exit(f"Database '{database}' does not exists. Try --rebuild")
 
     # Run the continuous queries command by default
     if ctx.invoked_subcommand is None:

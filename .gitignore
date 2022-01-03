@@ -131,3 +131,6 @@ dmypy.json
 # Test Collection
 test_collections/
 database/
+
+# vim
+.session.vim
