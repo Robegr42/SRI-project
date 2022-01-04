@@ -6,15 +6,15 @@ further processing byt the aplication.
 
 This class will create a folder structure like:
 
-    ./database/
-    |__ [database_name]/
+    ./database
+    |__ /[database_name]
         |__ docs.json
         |__ metadata.json
 
 For example:
 
-        ./database/
-        |__ cran/
+        ./database
+        |__ /cran
             |__ docs.json
             |__ metadata.json
 
@@ -56,7 +56,7 @@ class DatabaseCreator:
     @staticmethod
     def create(
         database_name: str,
-        metadata: Any,
+        metadata: List[dict],
         docs: List[str],
     ):
         """
@@ -66,7 +66,7 @@ class DatabaseCreator:
         ----------
         database_name : str
             Name of the database.
-        metadata : Any
+        metadata : List[dict]
             Dictionary of documents metadata.
         docs : List[str]
             List of documents.
@@ -74,13 +74,13 @@ class DatabaseCreator:
         database = DatabaseCreator(database_name)
         database.create_db(metadata, docs)
 
-    def create_db(self, metadata: Any, docs: List[str]):
+    def create_db(self, metadata: List[dict], docs: List[str]):
         """
         Create the database.
 
         Parameters
         ----------
-        metadata : Any
+        metadata : List[dict]
             Dictionary of documents metadata.
         docs : List[str]
             List of documents.
@@ -89,7 +89,7 @@ class DatabaseCreator:
         self._create_metadata(metadata)
         self._create_docs(docs)
 
-    def _create_metadata(self, metadata: dict):
+    def _create_metadata(self, metadata: List[dict]):
         """
         Create the documents metadata.
 
