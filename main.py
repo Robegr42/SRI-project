@@ -17,14 +17,17 @@ app = typer.Typer(add_completion=False)
 
 status = {}
 
+_BUILD_IN_DATABASES = ["cran"]
 
-@app.command("test")
-def test_model():
+@app.command("evaluate")
+def evaluate_model():
     """
-    Test the model
+    Evaluate the model for a given database.
     """
-    typer.echo("Not implemented")
-    raise typer.Exit()
+    database = status["database"]
+    if database not in _BUILD_IN_DATABASES:
+        raise typer.Exit(f"Database {database} is not supported for evaluation")
+    raise typer.Exit("Not implemented")
 
 
 @app.command("single")
@@ -104,6 +107,7 @@ def main(
         if database == "cran":
             create_cran_db()
     status["model"] = IRModel(str(db_folder), reindex)
+    status["database"] = database
 
     # Run the continuous queries command by default
     if ctx.invoked_subcommand is None:

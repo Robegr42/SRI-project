@@ -22,7 +22,7 @@ De forma adicional se puede ver la ayuda de cada uno de estos comandos:
 ```sh
 $ python main.py continuous --help
 $ python main.py single --help
-$ python main.py test --help
+$ python main.py evaluate --help
 ```
 
 ## Como añadir una base de datos nueva
