@@ -43,10 +43,10 @@ def single_query(query: str):
     results = model.search(query)
 
     # Display results
-    for i, res in enumerate(results):
-        typer.echo(f"{i + 1}.")
-        pprint(res)
-        if i == 5:
+    for res in results:
+        results.show_result(res)
+        opt = input("See next result? [Y/n]:").lower()
+        if opt == "n":
             break
 
 

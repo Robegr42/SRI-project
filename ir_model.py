@@ -217,11 +217,15 @@ class IRModel:
         )
         result_list = [(value, i) for i, value in enumerate(similarty)]
         result_list.sort(reverse=True)
+        pos = 0
         for value, i in result_list:
+            pos += 1
             results.append(
                 {
+                    "pos": pos,
                     "weight": value,
-                    "doc": self.metadata[i],
+                    "doc_index": i,
+                    "doc_metadata": self.metadata[i],
                 }
             )
         return QueryResult(query, results)
