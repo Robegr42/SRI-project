@@ -1,0 +1,69 @@
+% This is LLNCS.DEM the demonstration file of
+% the LaTeX macro package from Springer-Verlag
+% for Lecture Notes in Computer Science,
+% version 2.4 for LaTeX2e as of 16. April 2010
+%
+\documentclass{llncs}
+%
+\usepackage{makeidx}  % allows for indexgeneration
+\usepackage{graphicx}
+\usepackage{url}
+\usepackage[utf8]{inputenc}
+
+\setcounter{tocdepth}{2}
+%
+\begin{document}
+\frontmatter
+\pagestyle{headings}  % switches on printing of running heads
+
+\addtocmark[2]{Sistemas de Recuperación de Información\\ Trabajo Final}
+\mainmatter              % start of the contributions
+%
+\title{Sistemas de Recuperación de Información\\ Trabajo Final}
+%
+\titlerunning{Sistemas de Recuperación de Información\\ Trabajo Final}  % abbreviated title (for running head)
+%                                     also used for the TOC unless
+%                                     \toctitle is used
+%
+\author{Jorge J. Morgado Vega\inst{1} \and Roberto García Rodrígez\inst{1}}
+%
+% \authorrunning{Ivar Ekeland et al.} % abbreviated author list (for running head)
+%
+%%%% list of authors for the TOC (use if author list has to be modified)
+\tocauthor{Jorge J. Morgado Vega y Roberto García Rodrígez}
+%
+\institute{Universidad de la Habana, La Habana, Cuba}
+
+\maketitle              % typeset the title of the contribution
+
+\renewcommand\abstractname{Resúmen.}
+\renewcommand\keywordname{{\bf Palabras Claves:}}
+\begin{abstract}
+	
+\keywords{}
+\end{abstract}
+\renewcommand\abstractname{Abstract.}
+\renewcommand\keywordname{{\bf Keywords:}}
+\begin{abstract}
+	
+\keywords{}
+\end{abstract}
+%
+
+\tableofcontents
+\clearpage
+
+
+%
+% ---- Bibliography ----
+%
+\begin{thebibliography}{}
+%
+
+\end{thebibliography}
+\clearpage
+\addtocmark[2]{Subject Index} % additional numbered TOC entry
+\markboth{Subject Index}{Subject Index}
+\renewcommand{\indexname}{Subject Index}
+\input{subjidx.tex}
+\end{document}
