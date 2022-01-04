@@ -3,12 +3,12 @@
 ## Cómo ejecutar el programa
 
 ```sh
-$ python main.py
+python main.py
 ```
 
 Con el argumento `--help` se puede ver la ayuda del programa.
 ```sh
-$ python main.py --help
+python main.py --help
 ```
 
 ## Comandos disponibles
@@ -20,9 +20,9 @@ el comando `continuous` por defecto.
 
 De forma adicional se puede ver la ayuda de cada uno de estos comandos:
 ```sh
-$ python main.py continuous --help
-$ python main.py single --help
-$ python main.py evaluate --help
+python main.py continuous --help
+python main.py single --help
+python main.py evaluate --help
 ```
 
 ## Como añadir una base de datos nueva
@@ -64,12 +64,49 @@ cada consulta). Esta operación puede tomar un poco de tiempo y se puede realiza
 ejecutando el comando:
 
 ```shell
-python main.py --database [nombre] --reindex
+python main.py build [db_name]
 ```
 
 Finalmente para realizar búsquedas sobre la base de datos añadida es solo
 ejecutar:
 
 ```shell
-python main.py --database [nombre]
+python main.py --database [db_name]
+```
+
+## Construcción del modelo
+
+Para la construcción de un modelo a partir de una base de datos ya creada se utiliza
+el comando `build` de la siguiente forma:
+
+```shell
+python main.py build [db_name]
+```
+
+A este comando (de forma opcional) se le puede asignar un archivo de
+configuración que definirá cómo se construirá el modelo:
+
+```shell
+python main.py build [db_name] -c [config_file]
+python main.py build [db_name] --config [config_file]
+```
+
+> Ejemplo:
+> ```shell
+> python main.py build cran -c config.json
+> ```
+
+Se puede generar un archivo de configuración por defecto con el comando:
+
+```shell
+python main.py gen-config
+```
+
+> La configuración que genera el comando anterior el que se usa si no se
+> especifica ningun archivo.
+
+Para una descripción más detallada de las diferentes configuraciones:
+
+```shell
+python main.py gen-config --help
 ```

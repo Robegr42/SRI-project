@@ -2,16 +2,16 @@
 Main module for the application.
 """
 
+import json
 from pathlib import Path
+from pprint import pprint
 from typing import Optional
 
 import typer
 
 from cran_db_creator import create_db as create_cran_db
-from ir_model import IRModel
+from ir_model import DEFAULT_CONFIG, IRModel
 from query import Query
-from pprint import pprint
-
 
 app = typer.Typer(add_completion=False)
 
@@ -19,10 +19,11 @@ status = {}
 
 _BUILD_IN_DATABASES = ["cran"]
 
+
 @app.command("evaluate")
 def evaluate_model():
     """
-    Evaluate the model for a given database.
+    Evaluates the model for a given database.
     """
     database = status["database"]
     if database not in _BUILD_IN_DATABASES:
@@ -62,6 +63,68 @@ def continuous_queries():
         single_query(query)
 
 
+@app.command("build")
+def build_database_model(
+    database: str,
+    config_file: Optional[str] = typer.Option(
+        None,
+        "--config",
+        "-c",
+        help="Path to the configuration file",
+    ),
+):
+    """
+    Builds the model for a database
+
+    WARNING: this will overwrite the existing model
+    """
+    db_folder = Path(f"./database/{database}")
+    IRModel(str(db_folder), True, config_file)
+
+
+@app.command("gen-config")
+def generate_config(
+    output: Optional[str] = typer.Option(
+        "./config.json",
+        "--output",
+        "-o",
+        help="Path to the output file",
+    ),
+    force: bool = typer.Option(
+        False,
+        "--force",
+        "-f",
+        help="Overwrite existing configuration file",
+    ),
+):
+    """
+    Generates a configuration file.
+
+    The configuration file is a JSON file containing the default configuration
+    for the IR model building the model and querying.
+
+
+    Available configuration options:
+
+    \b
+    -- 'tokenization_method' (str): The tokenization method to use.
+
+    \b
+        Possible values:
+            'split'   Uses 'split' function from str.
+            'nltk'    Uses 'word_tokenizer' from nltk.
+    \b
+    -- 'include_metadata' (List[str]): List of metadata keys. The metadata
+        value of the specified keys will be included in the text used for
+        building the model. If key does not exist, it will be ignored. By
+        default, metadata is not included (Empty list).
+    """
+    if Path(output).exists() and not force:
+        raise typer.Exit(f"File {output} already exists\n\nUse --force to overwrite")
+    with open(output, "w") as config_f:
+        json.dump(DEFAULT_CONFIG, config_f, indent=4)
+
+
 @app.callback(invoke_without_command=True)
 def main(
     ctx: typer.Context,
@@ -72,10 +135,6 @@ def main(
     rebuild: Optional[bool] = typer.Option(
         default=False,
         help="Rebuild the database (generate 'docs.json' and 'metadata.json')",
-    ),
-    reindex: Optional[bool] = typer.Option(
-        default=False,
-        help="Reindex the database (generate IR model)",
     ),
 ):
     """
@@ -106,7 +165,7 @@ def main(
         typer.echo(f"Rebuilding the '{database}' database")
         if database == "cran":
             create_cran_db()
-    status["model"] = IRModel(str(db_folder), reindex)
+    status["model"] = IRModel(str(db_folder))
     status["database"] = database
 
     # Run the continuous queries command by default

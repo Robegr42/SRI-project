@@ -376,3 +376,6 @@ pythontex-files-*/
 # xypic precompiled matrices and outlines
 *.xyc
 *.xyd
+
+# Config files
+config.json

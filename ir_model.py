@@ -8,12 +8,18 @@ import json
 import time
 from collections import Counter
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Callable, Dict, List, Optional
 
 import numpy as np
 import typer
+from nltk import word_tokenize
 
 from query import Query, QueryResult
+
+DEFAULT_CONFIG = {
+    "tokenization_method": "split",
+    "include_metadata": [],
+}
 
 
 class IRModel:
@@ -26,12 +32,22 @@ class IRModel:
         The path to the data.
     """
 
-    def __init__(self, database_folder: str, reindex: bool = False):
+    def __init__(
+        self,
+        database_folder: str,
+        build: bool = False,
+        config_file: Optional[str] = None,
+    ):
         self.database_folder = Path(database_folder)
-        self.index_folder = self.database_folder / "index"
-        if not self.index_folder.exists():
-            reindex = True
-        self.index_folder.mkdir(exist_ok=True)
+        self.model_folder = self.database_folder / "model"
+        if not self.model_folder.exists():
+            build = True
+        self.model_folder.mkdir(exist_ok=True)
+
+        self.config = DEFAULT_CONFIG
+        if config_file is not None:
+            with open(config_file, "r") as c_file:
+                self.config = json.load(c_file)
 
         self.words: np.ndarray = None
         self.words_idx: dict = None
@@ -42,15 +58,15 @@ class IRModel:
 
         self.docs = None
         self.metadata = self._load_metadata_file()
-        if reindex:
-            self._build_index()
+        if build:
+            self._build_model()
         else:
-            self.words = self._get_index_file("words")
+            self.words = self._get_model_file("words")
             self.words_idx = {word: i for i, word in enumerate(self.words)}
-            self.freq = self._get_index_file("freq")
-            self.norm_freq = self._get_index_file("norm_freq")
-            self.idf = self._get_index_file("idf")
-            self.tf_idf = self._get_index_file("tf_idf")
+            self.freq = self._get_model_file("freq")
+            self.norm_freq = self._get_model_file("norm_freq")
+            self.idf = self._get_model_file("idf")
+            self.tf_idf = self._get_model_file("tf_idf")
 
     def _load_metadata_file(self) -> Dict:
         """
@@ -67,32 +83,40 @@ class IRModel:
                 return json.load(m_file)
         raise typer.Exit(f"'{file_path}' not found")
 
-    def _build_index(self):
+    def _build_model(self):
         """
-        Builds the index.
+        Builds the model.
         """
         # Extract texts
+        typer.echo("Extracting texts...")
         self.docs = self._get_documents()
+        for key in self.config["include_metadata"]:
+            if key in self.metadata:
+                self.docs += " " + self.metadata[key]
 
         # Tokenize texts by words
-        print("Tokenizing texts...")
-        docs_words = [doc.split() for doc in self.docs]
-        print("Extracting words frequencies...")
+        typer.echo("Tokenizing texts...")
+        tokenization_func = self._get_tokenization_func()
+        docs_words = [tokenization_func(doc) for doc in self.docs]
+
+        typer.echo("Extracting words frequencies...")
         words_frec: List[Dict[str, int]] = [
             Counter(doc_words) for doc_words in docs_words
         ]
+
         # Extract word set of each document
-        print("Extracting words set per document...")
+        typer.echo("Extracting words set per document...")
         words_by_doc = np.array([set(doc_words) for doc_words in docs_words])
+
         # Extract global word set
-        print("Extracting global word set...")
+        typer.echo("Extracting global word set...")
         self.words = np.array(
             list(set(word for words in words_by_doc for word in words))
         )
         self.words_idx = {word: i for i, word in enumerate(self.words)}
 
         # Build frequency matrix (and normalized)
-        print("Building frequency matrix (and normilized matrix)...")
+        typer.echo("Building frequency matrix (and normilized matrix)...")
         freq = np.zeros((len(self.docs), len(self.words)))
         norm_freq = np.zeros((len(self.docs), len(self.words)))
         start_time = time.time()
@@ -119,24 +143,40 @@ class IRModel:
         print(f"\r100% - Total time: {total_formated}")
 
         # Build inverse document frequency array
-        print("Building inverse document frequency array...")
+        typer.echo("Building inverse document frequency array...")
         self.idf = np.log(len(self.docs) / (self.freq > 0).sum(axis=0))
 
         # Build TF-IDF matrix
-        print("Building TF-IDF matrix...")
+        typer.echo("Building TF-IDF matrix...")
         self.tf_idf = self.norm_freq * self.idf
 
         # Save tables
-        print("Saving index...")
-        np.save(self.index_folder / "words.npy", self.words)
-        np.save(self.index_folder / "freq.npy", self.freq)
-        np.save(self.index_folder / "norm_freq.npy", self.norm_freq)
-        np.save(self.index_folder / "idf.npy", self.idf)
-        np.save(self.index_folder / "tf_idf.npy", self.tf_idf)
+        typer.echo("Saving model...")
+        np.save(self.model_folder / "words.npy", self.words)
+        np.save(self.model_folder / "freq.npy", self.freq)
+        np.save(self.model_folder / "norm_freq.npy", self.norm_freq)
+        np.save(self.model_folder / "idf.npy", self.idf)
+        np.save(self.model_folder / "tf_idf.npy", self.tf_idf)
 
-    def _get_index_file(self, file_name: str) -> np.ndarray:
+    def _get_tokenization_func(self) -> Callable:
         """
-        Extracts an index file from the index folder.
+        Returns the tokenization function.
+
+        Returns
+        -------
+        Callable
+            The tokenization function.
+        """
+        method = self.config["tokenization_method"]
+        if method == "nltk":
+            return word_tokenize
+        if method == "split":
+            return lambda text: text.split()
+        raise typer.Exit(f"Unknown tokenization method: {method}")
+
+    def _get_model_file(self, file_name: str) -> np.ndarray:
+        """
+        Extracts a file from the model folder.
 
         Parameters
         ----------
@@ -148,10 +188,13 @@ class IRModel:
         np.ndarray
             The extracted file.
         """
-        file_path = self.index_folder / f"{file_name}.npy"
+        file_path = self.model_folder / f"{file_name}.npy"
         if file_path.exists():
             return np.load(str(file_path))
-        raise typer.Exit(f"'{file_path}' not found\n\nTry running with --reindex")
+        raise typer.Exit(
+            f"'{file_path}' not found\n\n"
+            "Try to rebuild the model using the 'build' command"
+        )
 
     def _get_documents(self) -> np.ndarray:
         """
