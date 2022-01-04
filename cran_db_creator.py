@@ -38,6 +38,7 @@ def create_db():
     with open(cran_file, "r") as cran_f:
         state = None
         title, authors, pub, text = [], [], [], []
+        doc_id = None
         for line in cran_f:
             in_header = False
             for header, stt in header_state.items():
@@ -50,6 +51,7 @@ def create_db():
                 if text:
                     metadata.append(
                         {
+                            "doc_id": doc_id,
                             "title": " ".join(title),
                             "authors": " ".join(authors),
                             "pub": " ".join(pub),
@@ -57,6 +59,7 @@ def create_db():
                     )
                     texts.append(" ".join(text))
                 title, authors, pub, text = [], [], [], []
+                doc_id = line[3:-1]
 
             if state is None or in_header:
                 continue

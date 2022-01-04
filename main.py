@@ -10,6 +10,8 @@ import typer
 from cran_db_creator import create_db as create_cran_db
 from ir_model import IRModel
 from query import Query
+from pprint import pprint
+
 
 app = typer.Typer(add_completion=False)
 
@@ -31,15 +33,18 @@ def single_query(query: str):
     Process a single query
     """
     # Process the user query
-    # ...
+    query = Query(query)
 
     # Search documents
-    # ...
+    model = status["model"]
+    results = model.search(query)
 
     # Display results
-    # ...
-    typer.echo("Not implemented")
-    raise typer.Exit()
+    for i, res in enumerate(results):
+        typer.echo(f"{i + 1}.")
+        pprint(res)
+        if i == 5:
+            break
 
 
 @app.command("continuous")
@@ -98,9 +103,7 @@ def main(
         typer.echo(f"Rebuilding the '{database}' database")
         if database == "cran":
             create_cran_db()
-        status["model"] = IRModel(str(db_folder), True)
-    else:
-        status["model"] = IRModel(str(db_folder), reindex)
+    status["model"] = IRModel(str(db_folder), reindex)
 
     # Run the continuous queries command by default
     if ctx.invoked_subcommand is None:

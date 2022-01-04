@@ -5,13 +5,15 @@ The IR model is an implementation of the TF-IDF algorithm.
 """
 
 import json
+import time
 from collections import Counter
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import numpy as np
+import typer
 
-from query import Query
+from query import Query, QueryResult
 
 
 class IRModel:
@@ -27,6 +29,8 @@ class IRModel:
     def __init__(self, database_folder: str, reindex: bool = False):
         self.database_folder = Path(database_folder)
         self.index_folder = self.database_folder / "index"
+        if not self.index_folder.exists():
+            reindex = True
         self.index_folder.mkdir(exist_ok=True)
 
         self.words: np.ndarray = None
@@ -34,8 +38,10 @@ class IRModel:
         self.freq: np.ndarray = None
         self.norm_freq: np.ndarray = None
         self.idf: np.ndarray = None
+        self.tf_idf: np.ndarray = None
 
         self.docs = None
+        self.metadata = self._load_metadata_file()
         if reindex:
             self._build_index()
         else:
@@ -44,6 +50,22 @@ class IRModel:
             self.freq = self._get_index_file("freq")
             self.norm_freq = self._get_index_file("norm_freq")
             self.idf = self._get_index_file("idf")
+            self.tf_idf = self._get_index_file("tf_idf")
+
+    def _load_metadata_file(self) -> Dict:
+        """
+        Loads the metadata file.
+
+        Returns
+        -------
+        Dict
+            The loaded metadata.
+        """
+        file_path = self.database_folder / "metadata.json"
+        if file_path.exists():
+            with open(str(file_path), "r") as m_file:
+                return json.load(m_file)
+        raise typer.Exit(f"'{file_path}' not found")
 
     def _build_index(self):
         """
@@ -73,15 +95,18 @@ class IRModel:
         print("Building frequency matrix (and normilized matrix)...")
         freq = np.zeros((len(self.docs), len(self.words)))
         norm_freq = np.zeros((len(self.docs), len(self.words)))
-        percents_logs = np.arange(0, 1, 0.02)
-        percent_idx = 0
+        start_time = time.time()
         for i in range(len(self.docs)):
-            if (
-                percent_idx < len(percents_logs)
-                and i / len(self.docs) > percents_logs[percent_idx]
-            ):
-                print(f"{percents_logs[percent_idx] * 100:.2f}%")
-                percent_idx += 1
+            percent = i / len(self.docs) * 100
+            elapsed_time = time.time() - start_time
+            if elapsed_time > 0:
+                percent = max(percent, 0.0001)
+                time_left = (100 - percent) / percent * (time.time() - start_time)
+                formatted_time = time.strftime("%H:%M:%S", time.gmtime(time_left))
+                print(
+                    f"\r{percent:.2f}% - {formatted_time} left",
+                    end="",
+                )
 
             for word in words_by_doc[i]:
                 freq[i, self.words_idx[word]] = words_frec[i][word]
@@ -89,10 +114,17 @@ class IRModel:
                 norm_freq[i, j] = freq[i, j] / np.max(freq[i])
         self.freq = freq
         self.norm_freq = norm_freq
+        end_time = time.time()
+        total_formated = time.strftime("%H:%M:%S", time.gmtime(end_time - start_time))
+        print(f"\r100% - Total time: {total_formated}")
 
         # Build inverse document frequency array
         print("Building inverse document frequency array...")
         self.idf = np.log(len(self.docs) / (self.freq > 0).sum(axis=0))
+
+        # Build TF-IDF matrix
+        print("Building TF-IDF matrix...")
+        self.tf_idf = self.norm_freq * self.idf
 
         # Save tables
         print("Saving index...")
@@ -100,6 +132,7 @@ class IRModel:
         np.save(self.index_folder / "freq.npy", self.freq)
         np.save(self.index_folder / "norm_freq.npy", self.norm_freq)
         np.save(self.index_folder / "idf.npy", self.idf)
+        np.save(self.index_folder / "tf_idf.npy", self.tf_idf)
 
     def _get_index_file(self, file_name: str) -> np.ndarray:
         """
@@ -118,7 +151,7 @@ class IRModel:
         file_path = self.index_folder / f"{file_name}.npy"
         if file_path.exists():
             return np.load(str(file_path))
-        raise FileNotFoundError(f"'{file_path}' not found")
+        raise typer.Exit(f"'{file_path}' not found\n\nTry running with --reindex")
 
     def _get_documents(self) -> np.ndarray:
         """
@@ -128,9 +161,29 @@ class IRModel:
         if docs_file.exists():
             with open(str(docs_file), "r") as d_file:
                 return np.array(json.load(d_file))
-        raise FileNotFoundError(f"'{docs_file}' not found")
+        raise typer.Exit(f"'{docs_file}' not found")
 
-    def search(self, query: Query) -> list:
+    def _similarty(self, vector_1: np.ndarray, vector_2: np.ndarray) -> float:
+        """
+        Calculates the similarity between two vectors.
+
+        Parameters
+        ----------
+        vector_1 : np.ndarray
+            The first vector.
+        vector_2 : np.ndarray
+            The second vector.
+
+        Returns
+        -------
+        float
+            The similarity between the two vectors.
+        """
+        return np.dot(vector_1, vector_2) / (
+            np.linalg.norm(vector_1) * np.linalg.norm(vector_2)
+        )
+
+    def search(self, query: Query, smooth_a: Optional[float] = None) -> QueryResult:
         """
         Search for relevant documents based on the query.
 
@@ -144,4 +197,31 @@ class IRModel:
         list
             A list of relevant documents.
         """
-        raise NotImplementedError
+        results = []
+
+        # Get valid words from query
+        q_words = [word for word in query.words if word in self.words_idx]
+
+        # Calculate TF-IDF scores for the query
+        q_vector = np.zeros(len(self.words))
+        q_words_counter = Counter(q_words)
+        for word in q_words:
+            q_vector[self.words_idx[word]] = q_words_counter[word]
+        q_vector = q_vector / np.max(q_vector)
+
+        print(f"TF-IDF for query: {q_vector}")
+
+        # Calculate TF-IDF scores for each document
+        similarty = np.array(
+            [self._similarty(q_vector, doc_vector) for doc_vector in self.tf_idf]
+        )
+        result_list = [(value, i) for i, value in enumerate(similarty)]
+        result_list.sort(reverse=True)
+        for value, i in result_list:
+            results.append(
+                {
+                    "weight": value,
+                    "doc": self.metadata[i],
+                }
+            )
+        return QueryResult(query, results)

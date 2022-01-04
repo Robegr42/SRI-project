@@ -129,7 +129,14 @@ dmypy.json
 .pyre/
 
 # Test Collection
-test_collections/
+test_collections/*
+
+# database
+database/*
+
+# vim
+.session.vim
+
 
 ## Core latex/pdflatex auxiliary files:
 *.txt
