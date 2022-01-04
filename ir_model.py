@@ -101,17 +101,17 @@ class IRModel:
             elapsed_time = time.time() - start_time
             if elapsed_time > 0:
                 percent = max(percent, 0.0001)
-                time_left = (100 - percent) / percent * (time.time() - start_time)
+                time_left = (100 - percent) / percent * elapsed_time
                 formatted_time = time.strftime("%H:%M:%S", time.gmtime(time_left))
                 print(
                     f"\r{percent:.2f}% - {formatted_time} left",
                     end="",
                 )
 
+            words_frec_i = words_frec[i]
             for word in words_by_doc[i]:
-                freq[i, self.words_idx[word]] = words_frec[i][word]
-            for j in range(len(self.words)):
-                norm_freq[i, j] = freq[i, j] / np.max(freq[i])
+                freq[i, self.words_idx[word]] = words_frec_i[word]
+            norm_freq[i, :] = freq[i, :] / np.max(freq[i])
         self.freq = freq
         self.norm_freq = norm_freq
         end_time = time.time()
