@@ -52,10 +52,15 @@ class IRModel:
 
         self.words: np.ndarray = None
         self.words_idx: dict = None
-        self.freq: np.ndarray = None
-        self.norm_freq: np.ndarray = None
+
+        # [table, words, table]
+        # Tables are:
+        #    0 - freq
+        #    1 - norm_freq
+        #    2 - tf_idf
+        self.tf_idf_tables: np.ndarray = None
+
         self.idf: np.ndarray = None
-        self.tf_idf: np.ndarray = None
         self.model_info: dict = None
 
         self.docs = None
@@ -65,10 +70,8 @@ class IRModel:
         else:
             self.words = self._get_model_file("words")
             self.words_idx = {word: i for i, word in enumerate(self.words)}
-            self.freq = self._get_model_file("freq")
-            self.norm_freq = self._get_model_file("norm_freq")
             self.idf = self._get_model_file("idf")
-            self.tf_idf = self._get_model_file("tf_idf")
+            self.tf_idf_tables = self._get_model_file("tf_idf_tables")
             self.model_info = self._get_model_file("model_info", ext="json")
 
     def _load_metadata_file(self) -> Dict:
@@ -141,26 +144,25 @@ class IRModel:
             for word in words_by_doc[i]:
                 freq[i, self.words_idx[word]] = words_frec_i[word]
             norm_freq[i, :] = freq[i, :] / np.max(freq[i])
-        self.freq = freq
-        self.norm_freq = norm_freq
         end_time = time.time()
         total_formated = time.strftime("%H:%M:%S", time.gmtime(end_time - start_time))
         print(f"\r100% - Total time: {total_formated}")
 
         # Build inverse document frequency array
         typer.echo("Building inverse document frequency array...")
-        self.idf = np.log(len(self.docs) / (self.freq > 0).sum(axis=0))
+        self.idf = np.log(len(self.docs) / (freq > 0).sum(axis=0))
 
         # Build TF-IDF matrix
         typer.echo("Building TF-IDF matrix...")
-        self.tf_idf = self.norm_freq * self.idf
+        tf_idf = norm_freq * self.idf
+
+        # build final tables
+        self.tf_idf_tables = np.array([freq, norm_freq, tf_idf])
 
         typer.echo("Saving models files...")
         np.save(self.model_folder / "words.npy", self.words)
-        np.save(self.model_folder / "freq.npy", self.freq)
-        np.save(self.model_folder / "norm_freq.npy", self.norm_freq)
         np.save(self.model_folder / "idf.npy", self.idf)
-        np.save(self.model_folder / "tf_idf.npy", self.tf_idf)
+        np.save(self.model_folder / "tf_idf_tables.npy", self.tf_idf_tables)
 
         end_build_time = time.time()
         build_time = end_build_time - start_build_time
@@ -212,12 +214,17 @@ class IRModel:
             The extracted file.
         """
         file_path = self.model_folder / f"{file_name}.{ext}"
-        if file_path.exists():
+        if not file_path.exists():
+            raise typer.Exit(
+                f"'{file_path}' not found\n\n"
+                "Try to rebuild the model using the 'build' command"
+            )
+        if ext == "json":
+            with open(str(file_path), "r") as m_file:
+                return json.load(m_file)
+        if ext == "npy":
             return np.load(str(file_path))
-        raise typer.Exit(
-            f"'{file_path}' not found\n\n"
-            "Try to rebuild the model using the 'build' command"
-        )
+        raise typer.Exit(f"Invalid file extension: {ext}")
 
     def _get_documents(self) -> np.ndarray:
         """
@@ -249,6 +256,42 @@ class IRModel:
             np.linalg.norm(vector_1) * np.linalg.norm(vector_2)
         )
 
+    @property
+    def freq(self) -> np.ndarray:
+        """
+        Returns the frequency matrix.
+
+        Returns
+        -------
+        np.ndarray
+            The frequency matrix.
+        """
+        return self.tf_idf_tables[0]
+
+    @property
+    def norm_freq(self) -> np.ndarray:
+        """
+        Returns the normalized frequency matrix.
+
+        Returns
+        -------
+        np.ndarray
+            The normalized frequency matrix.
+        """
+        return self.tf_idf_tables[1]
+
+    @property
+    def tf_idf(self) -> np.ndarray:
+        """
+        Returns the TF-IDF matrix.
+
+        Returns
+        -------
+        np.ndarray
+            The TF-IDF matrix.
+        """
+        return self.tf_idf_tables[2]
+
     def search(self, query: Query, smooth_a: Optional[float] = None) -> QueryResult:
         """
         Search for relevant documents based on the query.
@@ -274,8 +317,6 @@ class IRModel:
         for word in q_words:
             q_vector[self.words_idx[word]] = q_words_counter[word]
         q_vector = q_vector / np.max(q_vector)
-
-        print(f"TF-IDF for query: {q_vector}")
 
         # Calculate TF-IDF scores for each document
         similarty = np.array(
