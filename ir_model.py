@@ -4,6 +4,7 @@ Information Retrieval Model
 The IR model is an implementation of the TF-IDF algorithm.
 """
 
+import datetime
 import json
 import time
 from collections import Counter
@@ -55,6 +56,7 @@ class IRModel:
         self.norm_freq: np.ndarray = None
         self.idf: np.ndarray = None
         self.tf_idf: np.ndarray = None
+        self.model_info: dict = None
 
         self.docs = None
         self.metadata = self._load_metadata_file()
@@ -67,6 +69,7 @@ class IRModel:
             self.norm_freq = self._get_model_file("norm_freq")
             self.idf = self._get_model_file("idf")
             self.tf_idf = self._get_model_file("tf_idf")
+            self.model_info = self._get_model_file("model_info", ext="json")
 
     def _load_metadata_file(self) -> Dict:
         """
@@ -87,12 +90,14 @@ class IRModel:
         """
         Builds the model.
         """
+        start_build_time = time.time()
         # Extract texts
         typer.echo("Extracting texts...")
-        self.docs = self._get_documents()
+        docs = self._get_documents()
         for key in self.config["include_metadata"]:
             if key in self.metadata:
-                self.docs += " " + self.metadata[key]
+                docs += " " + self.metadata[key]
+        self.docs = docs
 
         # Tokenize texts by words
         typer.echo("Tokenizing texts...")
@@ -126,9 +131,9 @@ class IRModel:
             if elapsed_time > 0:
                 percent = max(percent, 0.0001)
                 time_left = (100 - percent) / percent * elapsed_time
-                formatted_time = time.strftime("%H:%M:%S", time.gmtime(time_left))
+                formated_time = time.strftime("%H:%M:%S", time.gmtime(time_left))
                 print(
-                    f"\r{percent:.2f}% - {formatted_time} left",
+                    f"\r{percent:.2f}% - {formated_time} left",
                     end="",
                 )
 
@@ -150,13 +155,29 @@ class IRModel:
         typer.echo("Building TF-IDF matrix...")
         self.tf_idf = self.norm_freq * self.idf
 
-        # Save tables
-        typer.echo("Saving model...")
+        typer.echo("Saving models files...")
         np.save(self.model_folder / "words.npy", self.words)
         np.save(self.model_folder / "freq.npy", self.freq)
         np.save(self.model_folder / "norm_freq.npy", self.norm_freq)
         np.save(self.model_folder / "idf.npy", self.idf)
         np.save(self.model_folder / "tf_idf.npy", self.tf_idf)
+
+        end_build_time = time.time()
+        build_time = end_build_time - start_build_time
+
+        # Model info
+        typer.echo("Creating model info...")
+        self.model_info = {
+            "database_folder": str(self.database_folder),
+            "date": datetime.datetime.now().isoformat(),
+            "build_time": build_time,
+            "build_time_fromated": time.strftime("%H:%M:%S", time.gmtime(build_time)),
+            "config": self.config,
+        }
+
+        # Save tables
+        with open(self.model_folder / "model_info.json", "w") as m_file:
+            json.dump(self.model_info, m_file, indent=4)
 
     def _get_tokenization_func(self) -> Callable:
         """
@@ -174,7 +195,7 @@ class IRModel:
             return lambda text: text.split()
         raise typer.Exit(f"Unknown tokenization method: {method}")
 
-    def _get_model_file(self, file_name: str) -> np.ndarray:
+    def _get_model_file(self, file_name: str, ext: str = "npy") -> np.ndarray:
         """
         Extracts a file from the model folder.
 
@@ -182,13 +203,15 @@ class IRModel:
         ----------
         file_name : str
             The name of the file to extract.
+        ext : str
+            The extension of the file to extract.
 
         Returns
         -------
         np.ndarray
             The extracted file.
         """
-        file_path = self.model_folder / f"{file_name}.npy"
+        file_path = self.model_folder / f"{file_name}.{ext}"
         if file_path.exists():
             return np.load(str(file_path))
         raise typer.Exit(

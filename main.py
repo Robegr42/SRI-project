@@ -165,9 +165,9 @@ def main(
         typer.echo(f"Rebuilding the '{database}' database")
         if database == "cran":
             create_cran_db()
-    status["model"] = IRModel(str(db_folder))
+    if ctx.invoked_subcommand != "build":
+        status["model"] = IRModel(str(db_folder))
     status["database"] = database
-
     # Run the continuous queries command by default
     if ctx.invoked_subcommand is None:
         continuous_queries()
