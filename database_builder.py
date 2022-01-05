@@ -1,8 +1,8 @@
 """
-Database creator
+Database builder
 
-The class DatabaseCreator is used to structure a documents database for
-further processing byt the aplication.
+The class DatabaseBuilder is used to structure a documents database for
+further processing by the aplication.
 
 This class will create a folder structure like:
 
@@ -32,9 +32,9 @@ from typing import Any, List
 _DEFAULT_DB_PATH = Path("./database")
 
 
-class DatabaseCreator:
+class DatabaseBuilder:
     """
-    Abstract class for database creation.
+    Database builder class.
 
     Parameters
     ----------
@@ -54,13 +54,13 @@ class DatabaseCreator:
         self.database_path = _DEFAULT_DB_PATH / database_name
 
     @staticmethod
-    def create(
+    def build(
         database_name: str,
         metadata: List[dict],
         docs: List[str],
     ):
         """
-        Create the database.
+        Builds the database.
 
         Parameters
         ----------
@@ -71,12 +71,12 @@ class DatabaseCreator:
         docs : List[str]
             List of documents.
         """
-        database = DatabaseCreator(database_name)
-        database.create_db(metadata, docs)
+        database = DatabaseBuilder(database_name)
+        database.build_db(metadata, docs)
 
-    def create_db(self, metadata: List[dict], docs: List[str]):
+    def build_db(self, metadata: List[dict], docs: List[str]):
         """
-        Create the database.
+        Builds the database.
 
         Parameters
         ----------

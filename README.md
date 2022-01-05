@@ -53,18 +53,18 @@ documento. Cuando una consulta es realizada el resultado obtenido contiene los
 metadatos de los archivos relevantes.
 
 La creación de una base de datos puede automatizarse con el uso de la clase
-`DatabaseCreator` mediante el método estático `DatabaseCreator.create()`. Este
+`DatabaseBuilder` mediante el método estático `DatabaseBuilder.build()`. Este
 método recibe el nombre de la base de datos a crear, los metadatos y los
 documentos. Con estos elementos luego se crea la estructura necesaria y se
 guarda cada archivo donde debe ir.
 
-Luego de añadir una base de datos es necesario crear los archivos que se usarán
+Luego de añadir una base de datos es necesario crear el modelo que se usará
 para realizar consultas sobre ella (de esta forma no hay que recalcular todo en
 cada consulta). Esta operación puede tomar un poco de tiempo y se puede realizar
 ejecutando el comando:
 
 ```shell
-python main.py build [db_name]
+python main.py build-model [db_name]
 ```
 
 Finalmente para realizar búsquedas sobre la base de datos añadida es solo
@@ -80,15 +80,15 @@ Para la construcción de un modelo a partir de una base de datos ya creada se ut
 el comando `build` de la siguiente forma:
 
 ```shell
-python main.py build [db_name]
+python main.py build-model [db_name]
 ```
 
 A este comando (de forma opcional) se le puede asignar un archivo de
 configuración que definirá cómo se construirá el modelo:
 
 ```shell
-python main.py build [db_name] -c [config_file]
-python main.py build [db_name] --config [config_file]
+python main.py build-model [db_name] -c [config_file]
+python main.py build-model [db_name] --config [config_file]
 ```
 
 > Ejemplo:

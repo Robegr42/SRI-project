@@ -2,7 +2,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List
 
-from database_creator import DatabaseCreator
+from database_builder import DatabaseBuilder
 
 
 class ReadState(Enum):
@@ -17,7 +17,7 @@ class ReadState(Enum):
     TEXT = 4
 
 
-def create_db():
+def build_db():
     """
     Creates the cran database.
     """
@@ -73,4 +73,4 @@ def create_db():
             elif state == ReadState.TEXT:
                 text.append(line.strip())
 
-    DatabaseCreator.create("cran", metadata, texts)
+    DatabaseBuilder.build("cran", metadata, texts)

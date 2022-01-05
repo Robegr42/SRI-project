@@ -4,12 +4,11 @@ Main module for the application.
 
 import json
 from pathlib import Path
-from pprint import pprint
 from typing import Optional
 
 import typer
 
-from cran_db_creator import create_db as create_cran_db
+from cran_db_builder import build_db as build_cran_db
 from ir_model import DEFAULT_CONFIG, IRModel
 from query import Query
 
@@ -60,25 +59,6 @@ def continuous_queries():
         single_query(query)
 
 
-@app.command("build")
-def build_database_model(
-    database: str,
-    config_file: Optional[str] = typer.Option(
-        None,
-        "--config",
-        "-c",
-        help="Path to the configuration file",
-    ),
-):
-    """
-    Builds the model for a database
-
-    WARNING: this will overwrite the existing model
-    """
-    db_folder = Path(f"./database/{database}")
-    IRModel(str(db_folder), True, config_file)
-
-
 @app.command("gen-config")
 def generate_config(
     output: Optional[str] = typer.Option(
@@ -122,16 +102,78 @@ def generate_config(
         json.dump(DEFAULT_CONFIG, config_f, indent=4)
 
 
+@app.command("build-db")
+def build_database(
+    database: str,
+    force: bool = typer.Option(
+        False,
+        "--force",
+        "-f",
+        help="Overwrite existing configuration file",
+    ),
+):
+    """
+    Builds a database
+
+    The only supported database for building is 'cran'. If you want to build a
+    database other than 'cran', you can do it manually or by using the
+    'DatabaseCreator.create(...)' method.
+    """
+    db_folder = Path(f"./database/{database}")
+    if not db_folder.exists() or force:
+        if database not in _BUILD_IN_DATABASES:
+            raise typer.Exit(
+                f"Rebuild not suported for database '{database}'.\n\n"
+                "Please build your own database using the 'DatabaseCreator'\n"
+                "class available in 'database_creator.py'"
+            )
+        typer.echo(f"Building the '{database}' database")
+        if database == "cran":
+            build_cran_db()
+    else:
+        raise typer.Exit(
+            f"Database {database} already exists\n\nUse --force to overwrite"
+        )
+
+
+@app.command("build-model")
+def build_database_model(
+    database: str,
+    config_file: Optional[str] = typer.Option(
+        None,
+        "--config",
+        "-c",
+        help="Path to the configuration file",
+    ),
+    force: bool = typer.Option(
+        False,
+        "--force",
+        "-f",
+        help="Overwrite existing configuration file",
+    ),
+):
+    """
+    Builds the model for a database
+    """
+    db_folder = Path(f"./database/{database}")
+    model_folder = db_folder / "model"
+    if not db_folder.exists():
+        raise typer.Exit(f"Database {database} does not exist")
+    if not model_folder.exists() or force:
+        IRModel(str(db_folder), True, config_file)
+    else:
+        raise typer.Exit(
+            f"Database {database} already has a model folder\n\n"
+            "Use --force to overwrite"
+        )
+
+
 @app.callback(invoke_without_command=True)
 def main(
     ctx: typer.Context,
     database: Optional[str] = typer.Option(
         default="cran",
         help="Name of the database to use",
-    ),
-    rebuild: Optional[bool] = typer.Option(
-        default=False,
-        help="Rebuild the database (generate 'docs.json' and 'metadata.json')",
     ),
 ):
     """
@@ -145,24 +187,7 @@ def main(
 
     # Load the model according to the database and rebuild parameters
     db_folder = Path(f"./database/{database}")
-    if not db_folder.exists() or rebuild:
-        if not rebuild:
-            raise typer.Exit(
-                f"The database '{database}' does not exist. Use the --rebuild\n"
-                "option to create it.\n\n"
-                "NOTE: The --rebuild option is only available for the\n"
-                "cran database."
-            )
-        if database not in ("cran",):
-            raise typer.Exit(
-                f"Rebuild not suported for database '{database}'.\n\n"
-                "Please build your own database using the 'DatabaseCreator'\n"
-                "class available in 'database_creator.py'"
-            )
-        typer.echo(f"Rebuilding the '{database}' database")
-        if database == "cran":
-            create_cran_db()
-    if ctx.invoked_subcommand != "build":
+    if not ctx.invoked_subcommand.startswith("build"):
         status["model"] = IRModel(str(db_folder))
     status["database"] = database
     # Run the continuous queries command by default
