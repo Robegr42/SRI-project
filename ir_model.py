@@ -292,13 +292,13 @@ class IRModel:
         """
         return self.tf_idf_tables[2]
 
-    def search(self, query: Query, smooth_a: Optional[float] = None) -> QueryResult:
+    def search(self, raw_query: str, smooth_a: Optional[float] = None) -> QueryResult:
         """
         Search for relevant documents based on the query.
 
         Parameters
         ----------
-        query : Query
+        raw_query : str
             The query to search for.
 
         Returns
@@ -306,6 +306,7 @@ class IRModel:
         list
             A list of relevant documents.
         """
+        query = Query(raw_query)
         results = []
 
         # Get valid words from query

@@ -36,9 +36,6 @@ def single_query(query: str):
     """
     Process a single query
     """
-    # Process the user query
-    query = Query(query)
-
     # Search documents
     model = status["model"]
     results = model.search(query)
