@@ -134,8 +134,6 @@ class ModelTester:
         """
         Show the results.
         """
-        top_text = "" if top is None else f" [top={top}]"
-        typer.echo(f"\nResults{top_text}:")
         results = self.results
 
         for result in results:
@@ -159,33 +157,26 @@ class ModelTester:
 
         pres_mean, pres_std = np.mean(all_pres), np.std(all_pres)
         pres_min, pres_max = np.min(all_pres), np.max(all_pres)
-        typer.echo(
-            f"Presision:  {pres_mean:.3f} ± {pres_std:.3f} "
-            f"[{pres_min:.3f}, {pres_max:.3f}]"
-        )
+
         recall_mean, recall_std = np.mean(all_recall), np.std(all_recall)
         recall_min, recall_max = np.min(all_recall), np.max(all_recall)
-        typer.echo(
-            f"Recall:     {recall_mean:.3f} ± {recall_std:.3f} "
-            f"[{recall_min:.3f}, {recall_max:.3f}]"
-        )
+
         f1_mean, f1_std = np.mean(all_f1), np.std(all_f1)
         f1_min, f1_max = np.min(all_f1), np.max(all_f1)
-        typer.echo(
-            f"F1 score:   {f1_mean:.3f} ± {f1_std:.3f} " f"[{f1_min:.3f}, {f1_max:.3f}]"
-        )
+
         fallout_mean, fallout_std = np.mean(all_fallout), np.std(all_fallout)
         fallout_min, fallout_max = np.min(all_fallout), np.max(all_fallout)
-        typer.echo(
-            f"Fallout:    {fallout_mean:.3f} ± {fallout_std:.3f} "
-            f"[{fallout_min:.3f}, {fallout_max:.3f}]"
-        )
+
+        scores = np.array([res.ret_scores[:top] for res in results])
+        scores_mean, scores_std = np.mean(scores), np.std(scores)
+        scores_min, scores_max = np.min(scores), np.max(scores)
 
         ret_val = [
             (pres_mean, pres_std, pres_min, pres_max),
             (recall_mean, recall_std, recall_min, recall_max),
             (f1_mean, f1_std, f1_min, f1_max),
             (fallout_mean, fallout_std, fallout_min, fallout_max),
+            (scores_mean, scores_std, scores_min, scores_max),
         ]
 
         return ret_val
@@ -207,7 +198,8 @@ class ModelTester:
             List of query test results.
         """
         typer.echo("Testing model...")
-        test_result_file = self.model.model_folder / "test_results.npy"
+        model_id = self.model.model_info["id"]
+        test_result_file = self.model.model_folder / f"tests_{model_id}.npy"
         if not test_result_file.exists() or self.force:
             results = []
             total = len(query_tests)
@@ -246,8 +238,13 @@ class ModelTester:
         all_fallout_min = ret_vals[:, 3, 2]
         all_fallout_max = ret_vals[:, 3, 3]
 
+        all_scores_mean = ret_vals[:, 4, 0]
+        all_scores_std = ret_vals[:, 4, 1]
+        all_scores_min = ret_vals[:, 4, 2]
+        all_scores_max = ret_vals[:, 4, 3]
+
         for i, top in enumerate(tops):
-            typer.echo(f"Top {top}:")
+            typer.echo(f"\nTop {top}:")
             typer.echo(
                 f"Presision:  {all_pres_mean[i]:.3f} ± {all_pres_std[i]:.3f} "
                 f"[{all_pres_min[i]:.3f}, {all_pres_max[i]:.3f}]"
@@ -264,60 +261,33 @@ class ModelTester:
                 f"Fallout:    {all_fallout_mean[i]:.3f} ± {all_fallout_std[i]:.3f} "
                 f"[{all_fallout_min[i]:.3f}, {all_fallout_max[i]:.3f}]"
             )
+            typer.echo(
+                f"Score:      {all_scores_mean[i]:.3f} ± {all_scores_std[i]:.3f} "
+                f"[{all_scores_min[i]:.3f}, {all_scores_max[i]:.3f}]"
+            )
 
-        # create a grid to plot the results of 2x3
-        fig, axs = plt.subplots(2, 3, figsize=(10, 6))
-
-        # Set whole figure title
+        fig, axs = plt.subplots(2, 3, figsize=(12, 7))
         fig.suptitle("Model performance", fontsize=16)
 
         # Presision
         plt.sca(axs[0, 0])
-        self._plot_metrics(
-            mean_vals=all_pres_mean,
-            std_vals=all_pres_std,
-            min_vals=all_pres_min,
-            max_vals=all_pres_max,
-            title="Precision",
-            color="blue",
-        )
+        self._plot_metrics(ret_vals, idx=0, title="Precision", color="blue")
 
         # Recall
         plt.sca(axs[0, 1])
-        self._plot_metrics(
-            mean_vals=all_recall_mean,
-            std_vals=all_recall_std,
-            min_vals=all_recall_min,
-            max_vals=all_recall_max,
-            title="Recall",
-            color="orange",
-        )
+        self._plot_metrics(ret_vals, idx=1, title="Recall", color="orange")
 
         # F1 score
         plt.sca(axs[1, 0])
-        self._plot_metrics(
-            mean_vals=all_f1_mean,
-            std_vals=all_f1_std,
-            min_vals=all_f1_min,
-            max_vals=all_f1_max,
-            title="F1 score",
-            color="green",
-        )
+        self._plot_metrics(ret_vals, idx=2, title="F1 score", color="green")
 
         # Fallout
         plt.sca(axs[1, 1])
-        self._plot_metrics(
-            mean_vals=all_fallout_mean,
-            std_vals=all_fallout_std,
-            min_vals=all_fallout_min,
-            max_vals=all_fallout_max,
-            title="Fallout",
-            color="red",
-        )
+        self._plot_metrics(ret_vals, idx=3, title="Fallout", color="red")
 
         # Precision vs Recall
         plt.sca(axs[0, 2])
-        plt.plot(all_recall_mean, all_pres_mean, "-")
+        plt.plot(all_recall_mean, all_pres_mean, "o-")
         plt.grid()
         plt.xlabel("Recall")
         plt.ylabel("Precision")
@@ -325,33 +295,17 @@ class ModelTester:
 
         # Average score vs order
         plt.sca(axs[1, 2])
-        avg_scores = np.array([res.ret_scores[: tops[-1]] for res in self.results])
-        avg_scores_mean = np.mean(avg_scores, axis=0)
-        avg_scores_std = np.std(avg_scores, axis=0)
-        up_bound = avg_scores_mean + avg_scores_std
-        low_bound = avg_scores_mean - avg_scores_std
-        plt.fill_between(
-            range(1, len(avg_scores_mean) + 1),
-            up_bound,
-            low_bound,
-            alpha=0.4,
-            label="Scores mean std",
-        )
-        plt.plot(
-            range(1, len(avg_scores_mean) + 1), avg_scores_mean, label="Score avg."
-        )
-        plt.grid()
-        plt.xlabel("Order")
-        plt.ylabel("Score")
-        plt.title("Average score vs order")
-        plt.legend()
+        self._plot_metrics(ret_vals, idx=4, title="Score", color="purple")
 
         plt.tight_layout()
         plt.show()
 
-    def _plot_metrics(
-        self, mean_vals, std_vals, min_vals, max_vals, title, color, show: bool = False
-    ):
+    def _plot_metrics(self, ret_val, idx, title, color, show: bool = False):
+        mean_vals = ret_val[:, idx, 0]
+        std_vals = ret_val[:, idx, 1]
+        min_vals = ret_val[:, idx, 2]
+        max_vals = ret_val[:, idx, 3]
+
         plt.plot(
             range(1, len(mean_vals) + 1),
             max_vals,

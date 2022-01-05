@@ -38,7 +38,9 @@ class IRModel:
         database_folder: str,
         build: bool = False,
         config_file: Optional[str] = None,
+        model_name: str = None,
     ):
+        self.model_name = model_name
         self.database_folder = Path(database_folder)
         self.model_folder = self.database_folder / "model"
         if not self.model_folder.exists():
@@ -169,8 +171,8 @@ class IRModel:
 
         # Model info
         typer.echo("Creating model info...")
-        self.model_info = {
-            "id": time.ctime(time.time()),
+        model_info = {
+            "id": str(int(time.time())),
             "database_folder": str(self.database_folder),
             "date": datetime.datetime.now().isoformat(),
             "build_time": build_time,

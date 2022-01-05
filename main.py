@@ -21,9 +21,29 @@ _BUILD_IN_DATABASES = ["cran"]
 
 
 @app.command("evaluate")
-def evaluate_model(database: str):
+def evaluate_model(
+    database: str,
+    force: bool = typer.Option(
+        False,
+        "--force",
+        "-f",
+        help="Force re-calcualtion of the model tests",
+    ),
+):
     """
     Evaluates the model for a given database.
+
+    \b
+    Parameters of evaluation:
+        - Presision
+        - Recall
+        - F1
+        - Fallout
+        - Presition vs. Recall
+        - Scores
+
+    Each of these parameters (along with std, min and max values) are estimated
+    for diferents top k values (2, 4, 6, ..., 100).
     """
     if database not in _BUILD_IN_DATABASES:
         raise typer.Exit(f"Database {database} is not supported for evaluation")
@@ -31,7 +51,7 @@ def evaluate_model(database: str):
     if database == "cran":
         query_tests = cran_query_tests()
 
-    tester = ModelTester(status["model"], force=True)
+    tester = ModelTester(status["model"], force)
     tops = list(range(2, 100, 2))
     tester.test(query_tests, tops)
 
