@@ -1,5 +1,11 @@
 # SRI Final Project
 
+## Cómo instalar dependencias ncesesarias
+
+```shell
+pip install -r requirements.txt
+```
+
 ## Cómo ejecutar el programa
 
 ```sh

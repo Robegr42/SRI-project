@@ -139,7 +139,7 @@ database/*
 
 
 ## Core latex/pdflatex auxiliary files:
-*.txt
+[!requirements].txt
 *.aux
 *.lof
 *.log
