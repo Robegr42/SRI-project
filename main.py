@@ -10,7 +10,6 @@ import typer
 
 from cran_db_builder import build_db as build_cran_db
 from ir_model import DEFAULT_CONFIG, IRModel
-from query import Query
 
 app = typer.Typer(add_completion=False)
 
@@ -42,8 +41,7 @@ def single_query(query: str):
     # Display results
     for res in results:
         results.show_result(res)
-        opt = input("See next result? [Y/n]:").lower()
-        if opt == "n":
+        if not typer.confirm("See next result?", default=True):
             break
 
 
@@ -54,7 +52,7 @@ def continuous_queries():
     """
     while True:
         query = input("Enter query: ")
-        if query in ("", "exit"):
+        if query == "":
             break
         single_query(query)
 
@@ -113,7 +111,7 @@ def build_database(
     ),
 ):
     """
-    Builds a database
+    Builds a database (Only supported for: 'cran')
 
     The only supported database for building is 'cran'. If you want to build a
     database other than 'cran', you can do it manually or by using the
@@ -181,15 +179,20 @@ def main(
 
     By default the progrma will run the continuous queries command.
 
-    Authors: Jorge Morgado Vega (jorge.morgadov@gmail.com) and Roberto
-    García Rodríguez (roberto.garcia@estudiantes.matcom.uh.cu)
+    \b
+    Authors:
+        - Jorge Morgado Vega (jorge.morgadov@gmail.com)
+        - Roberto García Rodríguez (roberto.garcia@estudiantes.matcom.uh.cu)
     """
 
-    # Load the model according to the database and rebuild parameters
     db_folder = Path(f"./database/{database}")
-    if not ctx.invoked_subcommand.startswith("build"):
-        status["model"] = IRModel(str(db_folder))
     status["database"] = database
+    invoked_cmd = ctx.invoked_subcommand
+
+    # Load the model if command is not build
+    if invoked_cmd is None or not invoked_cmd.startswith("build"):
+        status["model"] = IRModel(str(db_folder))
+
     # Run the continuous queries command by default
     if ctx.invoked_subcommand is None:
         continuous_queries()

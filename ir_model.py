@@ -124,7 +124,7 @@ class IRModel:
         self.words_idx = {word: i for i, word in enumerate(self.words)}
 
         # Build frequency matrix (and normalized)
-        typer.echo("Building frequency matrix (and normilized matrix)...")
+        typer.echo("Building frequency matrix (and normalized matrix)...")
         freq = np.zeros((len(self.docs), len(self.words)))
         norm_freq = np.zeros((len(self.docs), len(self.words)))
         start_time = time.time()
