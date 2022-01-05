@@ -29,6 +29,12 @@ def evaluate_model(
         "-f",
         help="Force re-calcualtion of the model tests",
     ),
+    compare: bool = typer.Option(
+        False,
+        "--compare",
+        "-c",
+        help="Compare the current results with previous one (if they exist)",
+    ),
 ):
     """
     Evaluates the model for a given database.
@@ -51,7 +57,7 @@ def evaluate_model(
     if database == "cran":
         query_tests = cran_query_tests()
 
-    tester = ModelTester(status["model"], force)
+    tester = ModelTester(status["model"], force, compare)
     tops = list(range(2, 100, 2))
     tester.test(query_tests, tops)
 

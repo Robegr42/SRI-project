@@ -1,5 +1,6 @@
 import abc
 import json
+import os
 from pathlib import Path
 from typing import List, Optional, Union
 
@@ -125,9 +126,10 @@ class QueryTestResult:
 
 
 class ModelTester:
-    def __init__(self, model: IRModel, force: bool = False):
+    def __init__(self, model: IRModel, force: bool = False, compare: bool = False):
         self.model = model
         self.force = force
+        self.compare = compare
         self.results: List[QueryTestResult] = []
 
     def test_top(self, top: Optional[int] = None):
@@ -199,8 +201,20 @@ class ModelTester:
         """
         typer.echo("Testing model...")
         model_id = self.model.model_info["id"]
-        test_result_file = self.model.model_folder / f"tests_{model_id}.npy"
-        if not test_result_file.exists() or self.force:
+        model_folder = self.model.model_folder
+
+        test_files = []
+        for root, _, files in os.walk(str(model_folder)):
+            for file in files:
+                if file.startswith("test_") and file.endswith(".npy"):
+                    test_files.append(os.path.join(root, file))
+            break
+
+        test_files = sorted(test_files)
+
+        last_test_is_current = test_files and str(model_id) in test_files[-1]
+
+        if not test_files or not last_test_is_current or self.force:
             results = []
             total = len(query_tests)
             for i, q_test in enumerate(query_tests):
@@ -211,37 +225,95 @@ class ModelTester:
             print("\n")
             self.results = results
             ret_vals = np.array([self.test_top(top) for top in tops])
+            test_file = os.path.join(model_folder, f"test_{model_id}.npy")
         else:
+            test_file = test_files[-1]
             typer.echo("Loading test results...")
-            ret_vals = np.load(test_result_file)
+            ret_vals = np.load(test_file)
 
         # Save results
-        np.save(str(test_result_file), ret_vals)
+        np.save(str(test_file), ret_vals)
+        self.show_results(ret_vals, tops)
 
-        all_pres_mean = ret_vals[:, 0, 0]
-        all_pres_std = ret_vals[:, 0, 1]
-        all_pres_min = ret_vals[:, 0, 2]
-        all_pres_max = ret_vals[:, 0, 3]
+        if self.compare:
+            typer.echo("Comparing with other old tests...")
+            fig, axs = plt.subplots(2, 3, figsize=(12, 7))
+            for ax in axs.flatten():
+                ax.grid(True)
+                ax.set_xlabel("Top")
+                ax.set_ylabel("Mean")
+            fig.suptitle("Models comparison", fontsize=16)
+            alphas = np.linspace(1.0, 0.5, num=len(test_files))
+            test_files = test_files[::-1]
+            for alpha, test_file in zip(alphas, test_files):
+                typer.echo(alpha)
+                other_ret_vals = np.load(test_file)
+                self.plot_comparison_results(other_ret_vals, tops, alpha, axs)
+            plt.tight_layout()
+            plt.show()
 
-        all_recall_mean = ret_vals[:, 1, 0]
-        all_recall_std = ret_vals[:, 1, 1]
-        all_recall_min = ret_vals[:, 1, 2]
-        all_recall_max = ret_vals[:, 1, 3]
+    def plot_comparison_results(
+            self, ret_val: np.ndarray, tops: List[int], alpha: float, axs
+    ):
+        """
+        Show the comparison results.
+        """
+        all_pres_mean = ret_val[:, 0, 0]
+        all_recall_mean = ret_val[:, 1, 0]
+        all_f1_mean = ret_val[:, 2, 0]
+        all_fallout_mean = ret_val[:, 3, 0]
+        all_scores_mean = ret_val[:, 4, 0]
 
-        all_f1_mean = ret_vals[:, 2, 0]
-        all_f1_std = ret_vals[:, 2, 1]
-        all_f1_min = ret_vals[:, 2, 2]
-        all_f1_max = ret_vals[:, 2, 3]
+        plt.sca(axs[0, 0])
+        plt.plot(tops, all_pres_mean, alpha=alpha, color="blue")
+        plt.title("Precision")
 
-        all_fallout_mean = ret_vals[:, 3, 0]
-        all_fallout_std = ret_vals[:, 3, 1]
-        all_fallout_min = ret_vals[:, 3, 2]
-        all_fallout_max = ret_vals[:, 3, 3]
+        plt.sca(axs[0, 1])
+        plt.plot(tops, all_recall_mean, alpha=alpha, color="orange")
+        plt.title("Recall")
 
-        all_scores_mean = ret_vals[:, 4, 0]
-        all_scores_std = ret_vals[:, 4, 1]
-        all_scores_min = ret_vals[:, 4, 2]
-        all_scores_max = ret_vals[:, 4, 3]
+        plt.sca(axs[0, 2])
+        plt.plot(all_recall_mean, all_pres_mean, alpha=alpha, color="blue")
+        plt.title("Precision vs. Recall")
+
+        plt.sca(axs[1, 0])
+        plt.plot(tops, all_f1_mean, alpha=alpha, color="green")
+        plt.title("F1")
+
+        plt.sca(axs[1, 1])
+        plt.plot(tops, all_fallout_mean, alpha=alpha, color="red")
+        plt.title("Fallout")
+
+        plt.sca(axs[1, 2])
+        plt.plot(tops, all_scores_mean, alpha=alpha, color="purple")
+        plt.title("Scores")
+
+    def show_results(self, ret_val: np.ndarray, tops: List[int]):
+        """Show results of a single test."""
+        all_pres_mean = ret_val[:, 0, 0]
+        all_pres_std = ret_val[:, 0, 1]
+        all_pres_min = ret_val[:, 0, 2]
+        all_pres_max = ret_val[:, 0, 3]
+
+        all_recall_mean = ret_val[:, 1, 0]
+        all_recall_std = ret_val[:, 1, 1]
+        all_recall_min = ret_val[:, 1, 2]
+        all_recall_max = ret_val[:, 1, 3]
+
+        all_f1_mean = ret_val[:, 2, 0]
+        all_f1_std = ret_val[:, 2, 1]
+        all_f1_min = ret_val[:, 2, 2]
+        all_f1_max = ret_val[:, 2, 3]
+
+        all_fallout_mean = ret_val[:, 3, 0]
+        all_fallout_std = ret_val[:, 3, 1]
+        all_fallout_min = ret_val[:, 3, 2]
+        all_fallout_max = ret_val[:, 3, 3]
+
+        all_scores_mean = ret_val[:, 4, 0]
+        all_scores_std = ret_val[:, 4, 1]
+        all_scores_min = ret_val[:, 4, 2]
+        all_scores_max = ret_val[:, 4, 3]
 
         for i, top in enumerate(tops):
             typer.echo(f"\nTop {top}:")
@@ -269,21 +341,14 @@ class ModelTester:
         fig, axs = plt.subplots(2, 3, figsize=(12, 7))
         fig.suptitle("Model performance", fontsize=16)
 
-        # Presision
         plt.sca(axs[0, 0])
-        self._plot_metrics(ret_vals, idx=0, title="Precision", color="blue")
-
-        # Recall
+        self._plot_metrics(ret_val, idx=0, title="Precision", color="blue")
         plt.sca(axs[0, 1])
-        self._plot_metrics(ret_vals, idx=1, title="Recall", color="orange")
-
-        # F1 score
+        self._plot_metrics(ret_val, idx=1, title="Recall", color="orange")
         plt.sca(axs[1, 0])
-        self._plot_metrics(ret_vals, idx=2, title="F1 score", color="green")
-
-        # Fallout
+        self._plot_metrics(ret_val, idx=2, title="F1 score", color="green")
         plt.sca(axs[1, 1])
-        self._plot_metrics(ret_vals, idx=3, title="Fallout", color="red")
+        self._plot_metrics(ret_val, idx=3, title="Fallout", color="red")
 
         # Precision vs Recall
         plt.sca(axs[0, 2])
@@ -295,7 +360,7 @@ class ModelTester:
 
         # Average score vs order
         plt.sca(axs[1, 2])
-        self._plot_metrics(ret_vals, idx=4, title="Score", color="purple")
+        self._plot_metrics(ret_val, idx=4, title="Score", color="purple")
 
         plt.tight_layout()
         plt.show()
