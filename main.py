@@ -8,8 +8,10 @@ from typing import Optional
 
 import typer
 
-from cran_db_builder import build_db as build_cran_db
+from cran_db import build_db as build_cran_db
+from cran_db import query_tests as cran_query_tests
 from ir_model import DEFAULT_CONFIG, IRModel
+from model_tester import ModelTester
 
 app = typer.Typer(add_completion=False)
 
@@ -19,14 +21,19 @@ _BUILD_IN_DATABASES = ["cran"]
 
 
 @app.command("evaluate")
-def evaluate_model():
+def evaluate_model(database: str):
     """
     Evaluates the model for a given database.
     """
-    database = status["database"]
     if database not in _BUILD_IN_DATABASES:
         raise typer.Exit(f"Database {database} is not supported for evaluation")
-    raise typer.Exit("Not implemented")
+
+    if database == "cran":
+        query_tests = cran_query_tests()
+
+    tester = ModelTester(status["model"], force=True)
+    tops = list(range(2, 100, 2))
+    tester.test(query_tests, tops)
 
 
 @app.command("single")

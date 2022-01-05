@@ -170,6 +170,7 @@ class IRModel:
         # Model info
         typer.echo("Creating model info...")
         self.model_info = {
+            "id": time.ctime(time.time()),
             "database_folder": str(self.database_folder),
             "date": datetime.datetime.now().isoformat(),
             "build_time": build_time,
