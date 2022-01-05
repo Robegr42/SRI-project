@@ -10,6 +10,7 @@ import typer
 
 from cran_db import build_db as build_cran_db
 from cran_db import query_tests as cran_query_tests
+from reuter_db import build_db as build_reuter_db
 from ir_model import DEFAULT_CONFIG, IRModel
 from model_tester import ModelTester
 
