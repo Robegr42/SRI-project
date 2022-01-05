@@ -10,7 +10,7 @@ import typer
 
 from cran_db import build_db as build_cran_db
 from cran_db import query_tests as cran_query_tests
-from reuter_db import build_db as build_reuter_db
+from reuter_db import build_db as build_reuters_db
 from ir_model import DEFAULT_CONFIG, IRModel
 from model_tester import ModelTester
 
@@ -18,7 +18,8 @@ app = typer.Typer(add_completion=False)
 
 status = {}
 
-_BUILD_IN_DATABASES = ["cran"]
+_BUILD_IN_DATABASES = ["cran", "reuters"]
+_BUILD_IN_DATABASES_TEST = ["cran"]
 
 
 @app.command("evaluate")
@@ -52,7 +53,7 @@ def evaluate_model(
     Each of these parameters (along with std, min and max values) are estimated
     for diferents top k values (2, 4, 6, ..., 100).
     """
-    if database not in _BUILD_IN_DATABASES:
+    if database not in _BUILD_IN_DATABASES_TEST:
         raise typer.Exit(f"Database {database} is not supported for evaluation")
 
     if database == "cran":
@@ -162,6 +163,9 @@ def build_database(
         typer.echo(f"Building the '{database}' database")
         if database == "cran":
             build_cran_db()
+        elif database == "reuters":
+            build_reuters_db()
+
     else:
         raise typer.Exit(
             f"Database {database} already exists\n\nUse --force to overwrite"
