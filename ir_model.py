@@ -20,6 +20,7 @@ from query import Query, QueryResult
 DEFAULT_CONFIG = {
     "tokenization_method": "split",
     "include_metadata": [],
+    "query_alpha_smoothing": 0,
 }
 
 
@@ -295,7 +296,7 @@ class IRModel:
         """
         return self.tf_idf_tables[2]
 
-    def search(self, raw_query: str, smooth_a: Optional[float] = None) -> QueryResult:
+    def search(self, raw_query: str) -> QueryResult:
         """
         Search for relevant documents based on the query.
 
@@ -310,6 +311,7 @@ class IRModel:
             A list of relevant documents.
         """
         query = Query(raw_query)
+        smooth_a = self.model_info['config']["query_alpha_smoothing"]
         results = []
 
         # Get valid words from query
@@ -320,7 +322,7 @@ class IRModel:
         q_words_counter = Counter(q_words)
         for word in q_words:
             q_vector[self.words_idx[word]] = q_words_counter[word]
-        q_vector = q_vector / np.max(q_vector)
+        q_vector = smooth_a + (1 - smooth_a) * (q_vector / np.max(q_vector))
 
         # Calculate TF-IDF scores for each document
         similarty = np.array(

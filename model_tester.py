@@ -243,17 +243,20 @@ class ModelTester:
                 ax.set_xlabel("Top")
                 ax.set_ylabel("Mean")
             fig.suptitle("Models comparison", fontsize=16)
-            alphas = np.linspace(1.0, 0.5, num=len(test_files))
+            alphas = np.linspace(0.8, 0.4, num=len(test_files))
+            alphas[0] = 1.0
             test_files = test_files[::-1]
+            i = 0
             for alpha, test_file in zip(alphas, test_files):
-                typer.echo(alpha)
                 other_ret_vals = np.load(test_file)
-                self.plot_comparison_results(other_ret_vals, tops, alpha, axs)
+                line = "-" if i == 0 else "--"
+                self.plot_comparison_results(other_ret_vals, tops, alpha, axs, line)
+                i += 1
             plt.tight_layout()
             plt.show()
 
     def plot_comparison_results(
-            self, ret_val: np.ndarray, tops: List[int], alpha: float, axs
+        self, ret_val: np.ndarray, tops: List[int], alpha: float, axs, line
     ):
         """
         Show the comparison results.
@@ -265,27 +268,27 @@ class ModelTester:
         all_scores_mean = ret_val[:, 4, 0]
 
         plt.sca(axs[0, 0])
-        plt.plot(tops, all_pres_mean, alpha=alpha, color="blue")
+        plt.plot(tops, all_pres_mean, line, alpha=alpha, color="blue")
         plt.title("Precision")
 
         plt.sca(axs[0, 1])
-        plt.plot(tops, all_recall_mean, alpha=alpha, color="orange")
+        plt.plot(tops, all_recall_mean, line, alpha=alpha, color="orange")
         plt.title("Recall")
 
         plt.sca(axs[0, 2])
-        plt.plot(all_recall_mean, all_pres_mean, alpha=alpha, color="blue")
+        plt.plot(all_recall_mean, all_pres_mean, line, alpha=alpha, color="blue")
         plt.title("Precision vs. Recall")
 
         plt.sca(axs[1, 0])
-        plt.plot(tops, all_f1_mean, alpha=alpha, color="green")
+        plt.plot(tops, all_f1_mean, line, alpha=alpha, color="green")
         plt.title("F1")
 
         plt.sca(axs[1, 1])
-        plt.plot(tops, all_fallout_mean, alpha=alpha, color="red")
+        plt.plot(tops, all_fallout_mean, line, alpha=alpha, color="red")
         plt.title("Fallout")
 
         plt.sca(axs[1, 2])
-        plt.plot(tops, all_scores_mean, alpha=alpha, color="purple")
+        plt.plot(tops, all_scores_mean, line, alpha=alpha, color="purple")
         plt.title("Scores")
 
     def show_results(self, ret_val: np.ndarray, tops: List[int]):
