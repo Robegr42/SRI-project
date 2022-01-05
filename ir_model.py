@@ -6,6 +6,7 @@ The IR model is an implementation of the TF-IDF algorithm.
 
 import datetime
 import json
+import string
 import time
 from collections import Counter
 from pathlib import Path
@@ -14,6 +15,7 @@ from typing import Callable, Dict, List, Optional
 import numpy as np
 import typer
 from nltk import word_tokenize
+from nltk.corpus import stopwords
 
 from query import Query, QueryResult
 
@@ -21,6 +23,8 @@ DEFAULT_CONFIG = {
     "tokenization_method": "split",
     "include_metadata": [],
     "query_alpha_smoothing": 0,
+    "remove_stopwords": False,
+    "remove_punctuation": False,
 }
 
 
@@ -195,11 +199,27 @@ class IRModel:
             The tokenization function.
         """
         method = self.config["tokenization_method"]
+        tok_func = None
         if method == "nltk":
-            return word_tokenize
-        if method == "split":
-            return lambda text: text.split()
-        raise typer.Exit(f"Unknown tokenization method: {method}")
+            tok_func = word_tokenize
+        elif method == "split":
+            tok_func = lambda text: text.split()
+        else:
+            raise typer.Exit(f"Unknown tokenization method: {method}")
+
+        def tokenization_func(text: str) -> List[str]:
+            remove_stopwords = self.config["remove_stopwords"]
+            remove_punctuation = self.config["remove_punctuation"]
+            tokens = tok_func(text)
+            to_remove = []
+            if remove_stopwords:
+                to_remove += stopwords.words("english")
+            if remove_punctuation:
+                to_remove += string.punctuation
+            tokens = [token for token in tokens if token not in to_remove]
+            return tokens
+        
+        return tokenization_func
 
     def _get_model_file(self, file_name: str, ext: str = "npy") -> np.ndarray:
         """
@@ -311,7 +331,7 @@ class IRModel:
             A list of relevant documents.
         """
         query = Query(raw_query)
-        smooth_a = self.model_info['config']["query_alpha_smoothing"]
+        smooth_a = self.model_info["config"]["query_alpha_smoothing"]
         results = []
 
         # Get valid words from query
