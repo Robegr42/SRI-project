@@ -3,21 +3,39 @@ Main module for the application.
 """
 
 import json
+import os
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 
 import typer
 
 from cran_db import build_db as build_cran_db
 from cran_db import query_tests as cran_query_tests
 from ir_model import DEFAULT_CONFIG, IRModel
-from model_tester import ModelTester
+from model_tester import ModelTester, QueryTest
 
 app = typer.Typer(add_completion=False)
 
 status = {}
 
 _BUILD_IN_DATABASES = ["cran"]
+
+
+@app.command("clear-evals")
+def clear_evals(database: str):
+    """
+    Clears the evaluation results.
+    """
+    if not typer.confirm(
+        f"Are you sure you want to clear the evaluation results for {database}?",
+        default=True,
+    ):
+        return
+    for root, _, files in os.walk(f"database/{database}/model/"):
+        for file in files:
+            if file.startswith("test_"):
+                typer.echo(f"Removing {root}{file}")
+                os.remove(os.path.join(root, file))
 
 
 @app.command("evaluate")
@@ -32,8 +50,14 @@ def evaluate_model(
     compare: bool = typer.Option(
         False,
         "--compare",
-        "-c",
+        "-cm",
         help="Compare the current results with previous one (if they exist)",
+    ),
+    configs: Optional[List[str]] = typer.Option(
+        None,
+        "--configs",
+        "-cf",
+        help=("Path to the config file(s) to use."),
     ),
 ):
     """
@@ -50,16 +74,47 @@ def evaluate_model(
 
     Each of these parameters (along with std, min and max values) are estimated
     for diferents top k values (2, 4, 6, ..., 100).
+
+    NOTE: If you specify a config file (o several), each one will be used to
+    build a model and evaluate it. The order of the configs will
+    determin the orden of evaluation. The last model built (last
+    config) will be setted as the current model for that database.
+
+    WARNING: The current model will be overwritten.
     """
     if database not in _BUILD_IN_DATABASES:
         raise typer.Exit(f"Database {database} is not supported for evaluation")
 
+    typer.echo("Parsing query tests")
     if database == "cran":
         query_tests = cran_query_tests()
 
-    tester = ModelTester(status["model"], force, compare)
+
+    if configs is None or not configs:
+        _test_model(status["model"], query_tests, force, compare)
+        return
+
+    db_folder = Path(f"./database/{database}")
+    for config in configs:
+        typer.echo(f"\nBuilding model using {config}")
+        build_database_model(database, config)
+        model = IRModel(str(db_folder))
+        _test_model(model, query_tests, True, compare, False)
+
+
+def _test_model(
+    model: IRModel,
+    query_tests: List[QueryTest],
+    force: bool,
+    compare: bool,
+    show: bool = True,
+):
+    """
+    Tests the model for a given database.
+    """
+    tester = ModelTester(model, force, compare)
     tops = list(range(2, 100, 2))
-    tester.test(query_tests, tops)
+    tester.test(query_tests, tops, show)
 
 
 @app.command("single")

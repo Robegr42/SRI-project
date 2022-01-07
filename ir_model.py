@@ -100,6 +100,7 @@ class IRModel:
         """
         Builds the model.
         """
+        model_id = str(int(time.time() * 1000))
         start_build_time = time.time()
         # Extract texts
         typer.echo("Extracting texts...")
@@ -178,9 +179,9 @@ class IRModel:
         build_time = end_build_time - start_build_time
 
         # Model info
-        typer.echo("Creating model info...")
+        typer.echo(f"Creating model info {model_id}...")
         self.model_info = {
-            "id": str(int(time.time())),
+            "id": model_id,
             "database_folder": str(self.database_folder),
             "date": datetime.datetime.now().isoformat(),
             "build_time": build_time,

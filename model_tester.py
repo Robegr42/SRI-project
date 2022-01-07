@@ -183,7 +183,12 @@ class ModelTester:
 
         return ret_val
 
-    def test(self, query_tests: List[QueryTest], tops: Optional[List[int]] = None):
+    def test(
+        self,
+        query_tests: List[QueryTest],
+        tops: Optional[List[int]] = None,
+        show: bool = True,
+    ):
         """
         Test the model.
 
@@ -199,8 +204,8 @@ class ModelTester:
         List[QueryTestResult]
             List of query test results.
         """
-        typer.echo("Testing model...")
         model_id = self.model.model_info["id"]
+        typer.echo(f"Testing model {model_id}...")
         model_folder = self.model.model_folder
 
         test_files = []
@@ -232,8 +237,15 @@ class ModelTester:
             ret_vals = np.load(test_file)
 
         # Save results
+        typer.echo(f"Saving test results into {test_file}...")
         np.save(str(test_file), ret_vals)
+
+        if not show:
+            return
+
         self.show_results(ret_vals, tops)
+
+        test_files.append(test_file)
 
         if self.compare:
             typer.echo("Comparing with other old tests...")

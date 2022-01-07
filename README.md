@@ -116,3 +116,34 @@ Para una descripción más detallada de las diferentes configuraciones:
 ```shell
 python main.py gen-config --help
 ```
+
+## Evaluación
+
+Para evaluar un modelo de una base de datos:
+
+```shell
+python main.py evaluate [nombre]
+```
+
+> Ejemplo:
+> ```shell
+> python main.py evaluate cran
+> ```
+
+Si el modelo de la base de datos cambia entonces el comando anterior realizará
+otra evaluación, en caso contrario, se cargará la ultima evaluación hecha para
+el modelo existente.
+
+Si se quieren realizar comparaciones de las métricas entre todas las evaluaciones
+hechas se usa el comando `--compare` (o `-cm`):
+
+```shell
+python main.py evaluate [nombre] -cm
+```
+
+También se pueden construir varios modelos usando varios archivos de configuración
+y evaluarlos en un solo comando usando la opción `--configs` (o `-cf`):
+
+```shell
+python main.py evaluate [nombre] -cf config.json -cf adv_config.json
+```
