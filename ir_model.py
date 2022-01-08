@@ -19,6 +19,7 @@ from nltk.corpus import stopwords
 from nltk.corpus import wordnet as wn
 from nltk.stem import WordNetLemmatizer
 
+from display_tools import pbar
 from query import QueryResult
 
 DEFAULT_CONFIG = {
@@ -126,13 +127,15 @@ class IRModel:
         self.docs = docs
 
         # Tokenize texts by words
-        typer.echo("Tokenizing texts...")
+        typer.echo("Building tokenization function...")
         tokenization_func = self._get_tokenization_func(self.config)
-        docs_words = [tokenization_func(doc) for doc in self.docs]
+
+        typer.echo("Tokenizing texts...")
+        docs_words = [tokenization_func(doc) for doc in pbar(self.docs)]
 
         typer.echo("Extracting words frequencies...")
         words_frec: List[Dict[str, int]] = [
-            Counter(doc_words) for doc_words in docs_words
+            Counter(doc_words) for doc_words in pbar(docs_words)
         ]
 
         # Extract word set of each document
@@ -150,26 +153,12 @@ class IRModel:
         typer.echo("Building frequency matrix (and normalized matrix)...")
         freq = np.zeros((len(self.docs), len(self.words)))
         norm_freq = np.zeros((len(self.docs), len(self.words)))
-        start_time = time.time()
-        for i in range(len(self.docs)):
-            percent = i / len(self.docs) * 100
-            elapsed_time = time.time() - start_time
-            if elapsed_time > 0:
-                percent = max(percent, 0.0001)
-                time_left = (100 - percent) / percent * elapsed_time
-                formated_time = time.strftime("%H:%M:%S", time.gmtime(time_left))
-                print(
-                    f"\r{percent:.2f}% - {formated_time} left",
-                    end="",
-                )
-
+        for i in pbar(range(len(self.docs))):
             words_frec_i = words_frec[i]
             for word in words_by_doc[i]:
                 freq[i, self.words_idx[word]] = words_frec_i[word]
             norm_freq[i, :] = freq[i, :] / np.max(freq[i])
         end_time = time.time()
-        total_formated = time.strftime("%H:%M:%S", time.gmtime(end_time - start_time))
-        print(f"\r100% - Total time: {total_formated}")
 
         # Build inverse document frequency array
         typer.echo("Building inverse document frequency array...")

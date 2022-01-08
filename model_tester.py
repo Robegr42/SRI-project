@@ -1,13 +1,11 @@
-import abc
-import json
 import os
-from pathlib import Path
 from typing import List, Optional, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
 import typer
 
+from display_tools import pbar
 from ir_model import IRModel
 
 
@@ -220,15 +218,7 @@ class ModelTester:
         last_test_is_current = test_files and str(model_id) in test_files[-1]
 
         if not test_files or not last_test_is_current or self.force:
-            results = []
-            total = len(query_tests)
-            for i, q_test in enumerate(query_tests):
-                qt_result = self.test_query(q_test)
-                progress = (i + 1) / total * 100
-                print(f"\r{i}/{total} - {progress:.2f}%", end="")
-                results.append(qt_result)
-            print("\n")
-            self.results = results
+            self.results = [self.test_query(q_test) for q_test in pbar(query_tests)]
             ret_vals = np.array([self.test_top(top) for top in tops])
             test_file = os.path.join(model_folder, f"test_{model_id}.npy")
         else:
