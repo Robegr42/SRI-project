@@ -227,8 +227,6 @@ class IRModel:
             if remove_punctuation:
                 to_remove += string.punctuation
             tokens = [token for token in tokens if token not in to_remove]
-            if config["to_lower"]:
-                tokens = [token.lower() for token in tokens]
             return tokens
 
         return tokenization_func
@@ -385,8 +383,9 @@ class IRModel:
         q_vector *= l_term
 
         # Calculate TF-IDF scores for each document
+        docs = self.tf_idf_tables[2]
         similarty = np.array(
-            [self._similarty(q_vector, doc_vector) for doc_vector in self.tf_idf]
+            [self._similarty(q_vector, doc_vector) for doc_vector in docs]
         )
         result_list = [(value, i) for i, value in enumerate(similarty)]
         result_list.sort(reverse=True)

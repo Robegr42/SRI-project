@@ -245,7 +245,7 @@ class ModelTester:
                 ax.set_xlabel("Top")
                 ax.set_ylabel("Mean")
             fig.suptitle("Models comparison", fontsize=16)
-            alphas = np.linspace(0.8, 0.4, num=len(test_files))
+            alphas = np.linspace(0.8, 0.2, num=len(test_files))
             alphas[0] = 1.0
             test_files = test_files[::-1]
             i = 0
