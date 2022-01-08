@@ -25,6 +25,9 @@ class QueryTest:
         self.query = query
         self.rel_indices = rel_indices
 
+    def __repr__(self):
+        return f"(QueryTest(query={self.query}, rel_indices={self.rel_indices})"
+
 
 class QueryTestResult:
     """
@@ -150,6 +153,11 @@ class ModelTester:
         not_none_inx = np.logical_and(not_none_inx, all_f1 != None)
         not_none_inx = np.logical_and(not_none_inx, all_fallout != None)
         ignored_idx = len(results) - np.sum(not_none_inx)
+
+        if ignored_idx == len(results):
+            print("No results to show.")
+            return np.zeros((5, 4))
+
         all_pres = all_pres[not_none_inx]
         all_recall = all_recall[not_none_inx]
         all_f1 = all_f1[not_none_inx]
@@ -238,7 +246,6 @@ class ModelTester:
         test_files.append(test_file)
 
         if self.compare:
-            typer.echo("Comparing with other old tests...")
             fig, axs = plt.subplots(2, 3, figsize=(12, 7))
             for ax in axs.flatten():
                 ax.grid(True)

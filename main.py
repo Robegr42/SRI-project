@@ -9,16 +9,31 @@ from typing import List, Optional
 
 import typer
 
-from cran_db import build_db as build_cran_db
-from cran_db import query_tests as cran_query_tests
+from db_cacm import build_cacm_db, cacm_query_tests
+from db_cran import build_cran_db, cran_query_tests
 from ir_model import DEFAULT_CONFIG, IRModel
 from model_tester import ModelTester, QueryTest
+
+# from db_cran import build_cran_db, cran_query_tests
+# from db_cran import build_cran_db, cran_query_tests
+# from db_cran import build_cran_db, cran_query_tests
+
 
 app = typer.Typer(add_completion=False)
 
 status = {}
 
-_BUILD_IN_DATABASES = ["cran"]
+_BUILD_IN_DATABASES = ["cran", "cacm"]
+
+_DB_BUILDERS = {
+    "cacm": build_cacm_db,
+    "cran": build_cran_db,
+}
+
+_DB_QUERY_TESTS = {
+    "cran": cran_query_tests,
+    "cacm": cacm_query_tests,
+}
 
 
 @app.command("clear-evals")
@@ -86,15 +101,14 @@ def evaluate_model(
         raise typer.Exit(f"Database {database} is not supported for evaluation")
 
     typer.echo("Parsing query tests")
-    if database == "cran":
-        query_tests = cran_query_tests()
-
-
-    if configs is None or not configs:
-        _test_model(status["model"], query_tests, force, compare)
-        return
+    query_tests = _DB_QUERY_TESTS[database]()
 
     db_folder = Path(f"./database/{database}")
+    model = IRModel(str(db_folder))
+    if configs is None or not configs:
+        _test_model(model, query_tests, force, compare)
+        return
+
     for config in configs:
         typer.echo(f"\nBuilding model using {config}")
         build_database_model(database, config)
@@ -214,8 +228,7 @@ def build_database(
                 "class available in 'database_creator.py'"
             )
         typer.echo(f"Building the '{database}' database")
-        if database == "cran":
-            build_cran_db()
+        _DB_BUILDERS[database]()
     else:
         raise typer.Exit(
             f"Database {database} already exists\n\nUse --force to overwrite"
