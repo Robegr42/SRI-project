@@ -157,12 +157,12 @@ class IRModel:
             words_frec_i = words_frec[i]
             for word in words_by_doc[i]:
                 freq[i, self.words_idx[word]] = words_frec_i[word]
-            norm_freq[i, :] = freq[i, :] / np.max(freq[i])
+            norm_freq[i, :] = freq[i, :] / (np.max(freq[i]) + 1)
         end_time = time.time()
 
         # Build inverse document frequency array
         typer.echo("Building inverse document frequency array...")
-        self.idf = np.log(len(self.docs) / (freq > 0).sum(axis=0))
+        self.idf = np.log(len(self.docs) / ((freq > 0).sum(axis=0) + 1))
 
         smooth_a = self.config["query_alpha_smoothing"]
         self.idf = (1 - smooth_a) * self.idf + smooth_a
@@ -376,10 +376,8 @@ class IRModel:
             q_vector[self.words_idx[word]] = q_words_counter[word]
 
         matches = (self.freq > 0) * (q_vector > 0)
-        if np.max(q_vector) == 0:
-            return QueryResult(raw_query, [])
         l_term = np.log(len(self.metadata) / (np.sum(matches, axis=0) + 1))
-        q_vector = smooth_a + (1 - smooth_a) * (q_vector / np.max(q_vector))
+        q_vector = smooth_a + (1 - smooth_a) * (q_vector / (np.max(q_vector) + 1))
         q_vector *= l_term
 
         # Calculate TF-IDF scores for each document
