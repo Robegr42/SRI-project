@@ -11,6 +11,7 @@ import typer
 
 from db_cacm import build_cacm_db, cacm_query_tests
 from db_cran import build_cran_db, cran_query_tests
+from db_cisi import build_cisi_db, cisi_query_tests
 from ir_model import DEFAULT_CONFIG, IRModel
 from model_tester import ModelTester, QueryTest
 
@@ -23,16 +24,18 @@ app = typer.Typer(add_completion=False)
 
 status = {}
 
-_BUILD_IN_DATABASES = ["cran", "cacm"]
+_BUILD_IN_DATABASES = ["cran", "cacm", "cisi"]
 
 _DB_BUILDERS = {
     "cacm": build_cacm_db,
+    "cisi": build_cisi_db,
     "cran": build_cran_db,
 }
 
 _DB_QUERY_TESTS = {
-    "cran": cran_query_tests,
     "cacm": cacm_query_tests,
+    "cisi": cisi_query_tests,
+    "cran": cran_query_tests,
 }
 
 
