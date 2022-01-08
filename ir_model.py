@@ -75,13 +75,7 @@ class IRModel:
 
         self.words: np.ndarray = None
         self.words_idx: dict = None
-
-        # [table, words, table]
-        # Tables are:
-        #    0 - freq
-        #    1 - norm_freq
-        #    2 - tf_idf
-        self.tf_idf_tables: np.ndarray = None
+        self.tf_idf: np.ndarray = None
 
         self.idf: np.ndarray = None
         self.model_info: dict = None
@@ -94,7 +88,7 @@ class IRModel:
             self.words = self._get_model_file("words")
             self.words_idx = {word: i for i, word in enumerate(self.words)}
             self.idf = self._get_model_file("idf")
-            self.tf_idf_tables = self._get_model_file("tf_idf_tables")
+            self.tf_idf = self._get_model_file("tf_idf")
             self.model_info = self._get_model_file("model_info", ext="json")
 
     def _load_metadata_file(self) -> Dict:
@@ -151,18 +145,17 @@ class IRModel:
 
         # Build frequency matrix (and normalized)
         typer.echo("Building frequency matrix (and normalized matrix)...")
-        freq = np.zeros((len(self.docs), len(self.words)))
         norm_freq = np.zeros((len(self.docs), len(self.words)))
         for i in pbar(range(len(self.docs))):
             words_frec_i = words_frec[i]
             for word in words_by_doc[i]:
-                freq[i, self.words_idx[word]] = words_frec_i[word]
-            norm_freq[i, :] = freq[i, :] / (np.max(freq[i]) + 1)
+                norm_freq[i, self.words_idx[word]] = words_frec_i[word]
+            norm_freq[i, :] = norm_freq[i, :] / (np.max(norm_freq[i]) + 1)
         end_time = time.time()
 
         # Build inverse document frequency array
         typer.echo("Building inverse document frequency array...")
-        self.idf = np.log(len(self.docs) / ((freq > 0).sum(axis=0) + 1))
+        self.idf = np.log(len(self.docs) / ((norm_freq > 0).sum(axis=0) + 1))
 
         smooth_a = self.config["query_alpha_smoothing"]
         self.idf = (1 - smooth_a) * self.idf + smooth_a
@@ -172,12 +165,12 @@ class IRModel:
         tf_idf = norm_freq * self.idf
 
         # build final tables
-        self.tf_idf_tables = np.array([freq, norm_freq, tf_idf])
+        self.tf_idf = tf_idf
 
         typer.echo("Saving models files...")
         np.save(self.model_folder / "words.npy", self.words)
         np.save(self.model_folder / "idf.npy", self.idf)
-        np.save(self.model_folder / "tf_idf_tables.npy", self.tf_idf_tables)
+        np.save(self.model_folder / "tf_idf.npy", self.tf_idf)
 
         end_build_time = time.time()
         build_time = end_build_time - start_build_time
@@ -310,42 +303,6 @@ class IRModel:
             np.linalg.norm(vector_1) * np.linalg.norm(vector_2)
         )
 
-    @property
-    def freq(self) -> np.ndarray:
-        """
-        Returns the frequency matrix.
-
-        Returns
-        -------
-        np.ndarray
-            The frequency matrix.
-        """
-        return self.tf_idf_tables[0]
-
-    @property
-    def norm_freq(self) -> np.ndarray:
-        """
-        Returns the normalized frequency matrix.
-
-        Returns
-        -------
-        np.ndarray
-            The normalized frequency matrix.
-        """
-        return self.tf_idf_tables[1]
-
-    @property
-    def tf_idf(self) -> np.ndarray:
-        """
-        Returns the TF-IDF matrix.
-
-        Returns
-        -------
-        np.ndarray
-            The TF-IDF matrix.
-        """
-        return self.tf_idf_tables[2]
-
     def search(self, raw_query: str) -> QueryResult:
         """
         Search for relevant documents based on the query.
@@ -375,13 +332,13 @@ class IRModel:
         for word in q_words:
             q_vector[self.words_idx[word]] = q_words_counter[word]
 
-        matches = (self.freq > 0) * (q_vector > 0)
+        matches = (self.tf_idf > 0) * (q_vector > 0)
         l_term = np.log(len(self.metadata) / (np.sum(matches, axis=0) + 1))
         q_vector = smooth_a + (1 - smooth_a) * (q_vector / (np.max(q_vector) + 1))
         q_vector *= l_term
 
         # Calculate TF-IDF scores for each document
-        docs = self.tf_idf_tables[2]
+        docs = self.tf_idf
         similarty = np.array(
             [self._similarty(q_vector, doc_vector) for doc_vector in docs]
         )

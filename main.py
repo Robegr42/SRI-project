@@ -13,23 +13,22 @@ from db_cacm import build_cacm_db, cacm_query_tests
 from db_cisi import build_cisi_db, cisi_query_tests
 from db_cran import build_cran_db, cran_query_tests
 from db_med import build_med_db, med_query_tests
+from db_npl import build_npl_db, npl_query_tests
 from ir_model import DEFAULT_CONFIG, IRModel
 from model_tester import ModelTester, QueryTest
-
-# from db_cran import build_cran_db, cran_query_tests
-
 
 app = typer.Typer(add_completion=False)
 
 status = {}
 
-_BUILD_IN_DATABASES = ["cran", "cisi", "med"]
+_BUILD_IN_DATABASES = ["cran", "cisi", "med", "npl"]
 
 _DB_BUILDERS = {
     "cacm": build_cacm_db,
     "cisi": build_cisi_db,
     "cran": build_cran_db,
     "med": build_med_db,
+    "npl": build_npl_db,
 }
 
 _DB_QUERY_TESTS = {
@@ -37,6 +36,7 @@ _DB_QUERY_TESTS = {
     "cisi": cisi_query_tests,
     "cran": cran_query_tests,
     "med": med_query_tests,
+    "npl": npl_query_tests,
 }
 
 
@@ -295,7 +295,7 @@ def main(
     invoked_cmd = ctx.invoked_subcommand
 
     # Load the model if command is not build
-    if invoked_cmd is None or not invoked_cmd.startswith("build"):
+    if invoked_cmd in ["continuous", "single"]:
         status["model"] = IRModel(str(db_folder))
 
     # Run the continuous queries command by default
