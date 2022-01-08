@@ -14,6 +14,8 @@ from db_cisi import build_cisi_db, cisi_query_tests
 from db_cran import build_cran_db, cran_query_tests
 from db_med import build_med_db, med_query_tests
 from db_npl import build_npl_db, npl_query_tests
+from db_lisa import build_lisa_db, lisa_query_tests
+
 from ir_model import DEFAULT_CONFIG, IRModel
 from model_tester import ModelTester, QueryTest
 
@@ -21,7 +23,7 @@ app = typer.Typer(add_completion=False)
 
 status = {}
 
-_BUILD_IN_DATABASES = ["cran", "cisi", "med", "npl"]
+_BUILD_IN_DATABASES = ["cran", "cisi", "med"]
 
 _DB_BUILDERS = {
     "cacm": build_cacm_db,
@@ -29,6 +31,7 @@ _DB_BUILDERS = {
     "cran": build_cran_db,
     "med": build_med_db,
     "npl": build_npl_db,
+    "lisa": build_lisa_db,
 }
 
 _DB_QUERY_TESTS = {
@@ -37,6 +40,7 @@ _DB_QUERY_TESTS = {
     "cran": cran_query_tests,
     "med": med_query_tests,
     "npl": npl_query_tests,
+    "lisa": lisa_query_tests,
 }
 
 
