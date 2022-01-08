@@ -289,6 +289,8 @@ class ModelTester:
 
         plt.sca(axs[0, 2])
         plt.plot(all_recall_mean, all_pres_mean, line, alpha=alpha, color="blue")
+        plt.xlabel("Recall")
+        plt.ylabel("Precision")
         plt.title("Precision vs. Recall")
 
         plt.sca(axs[1, 0])

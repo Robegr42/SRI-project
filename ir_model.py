@@ -14,10 +14,12 @@ from typing import Callable, Dict, List, Optional
 
 import numpy as np
 import typer
-from nltk import word_tokenize
+from nltk import pos_tag, word_tokenize
 from nltk.corpus import stopwords
+from nltk.corpus import wordnet as wn
+from nltk.stem import WordNetLemmatizer
 
-from query import Query, QueryResult
+from query import QueryResult
 
 DEFAULT_CONFIG = {
     "tokenization_method": "split",
@@ -25,7 +27,20 @@ DEFAULT_CONFIG = {
     "query_alpha_smoothing": 0,
     "remove_stopwords": False,
     "remove_punctuation": False,
+    "lemmatization": False,
 }
+
+
+def _nltk_pos_tagger(nltk_tag):
+    if nltk_tag.startswith("J"):
+        return wn.ADJ
+    if nltk_tag.startswith("V"):
+        return wn.VERB
+    if nltk_tag.startswith("N"):
+        return wn.NOUN
+    if nltk_tag.startswith("R"):
+        return wn.ADV
+    return None
 
 
 class IRModel:
@@ -55,7 +70,7 @@ class IRModel:
         self.config = DEFAULT_CONFIG
         if config_file is not None:
             with open(config_file, "r") as c_file:
-                self.config = json.load(c_file)
+                self.config.update(json.load(c_file))
 
         self.words: np.ndarray = None
         self.words_idx: dict = None
@@ -112,7 +127,7 @@ class IRModel:
 
         # Tokenize texts by words
         typer.echo("Tokenizing texts...")
-        tokenization_func = self._get_tokenization_func()
+        tokenization_func = self._get_tokenization_func(self.config)
         docs_words = [tokenization_func(doc) for doc in self.docs]
 
         typer.echo("Extracting words frequencies...")
@@ -193,7 +208,7 @@ class IRModel:
         with open(self.model_folder / "model_info.json", "w") as m_file:
             json.dump(self.model_info, m_file, indent=4)
 
-    def _get_tokenization_func(self) -> Callable:
+    def _get_tokenization_func(self, config: dict) -> Callable:
         """
         Returns the tokenization function.
 
@@ -202,8 +217,8 @@ class IRModel:
         Callable
             The tokenization function.
         """
-        method = self.config["tokenization_method"]
         tok_func = None
+        method = config["tokenization_method"]
         if method == "nltk":
             tok_func = word_tokenize
         elif method == "split":
@@ -212,18 +227,42 @@ class IRModel:
             raise typer.Exit(f"Unknown tokenization method: {method}")
 
         def tokenization_func(text: str) -> List[str]:
-            remove_stopwords = self.config["remove_stopwords"]
-            remove_punctuation = self.config["remove_punctuation"]
+            remove_stopwords = config["remove_stopwords"]
+            remove_punctuation = config["remove_punctuation"]
             tokens = tok_func(text)
+            if config["lemmatization"]:
+                tokens = self._lemmatize_tokens(tokens)
             to_remove = []
             if remove_stopwords:
                 to_remove += stopwords.words("english")
             if remove_punctuation:
                 to_remove += string.punctuation
             tokens = [token for token in tokens if token not in to_remove]
+            if config["to_lower"]:
+                tokens = [token.lower() for token in tokens]
             return tokens
 
         return tokenization_func
+
+    def _lemmatize_tokens(self, tokens: List[str]) -> List[str]:
+        """
+        Lemmatizes a text.
+
+        Parameters
+        ----------
+        text : str
+            The text to lemmatize.
+
+        Returns
+        -------
+        str
+            The lemmatized text.
+        """
+        lemmatizer = WordNetLemmatizer()
+        tagged_tokens = pos_tag(tokens)
+        tokens = [(w, _nltk_pos_tagger(t)) for w, t in tagged_tokens]
+        lemm = [w if t is None else lemmatizer.lemmatize(w, t) for w, t in tokens]
+        return lemm
 
     def _get_model_file(self, file_name: str, ext: str = "npy") -> np.ndarray:
         """
@@ -334,12 +373,14 @@ class IRModel:
         list
             A list of relevant documents.
         """
-        query = Query(raw_query)
+
+        tok_func = self._get_tokenization_func(self.model_info["config"])
+        words = set(tok_func(raw_query))
         smooth_a = self.model_info["config"]["query_alpha_smoothing"]
         results = []
 
         # Get valid words from query
-        q_words = [word for word in query.words if word in self.words_idx]
+        q_words = [word for word in words if word in self.words_idx]
 
         # Calculate TF-IDF scores for the query
         q_vector = np.zeros(len(self.words))
@@ -349,7 +390,7 @@ class IRModel:
 
         matches = (self.freq > 0) * (q_vector > 0)
         if np.max(q_vector) == 0:
-            return QueryResult(query, [])
+            return QueryResult(raw_query, [])
         l_term = np.log(len(self.metadata) / (np.sum(matches, axis=0) + 1))
         q_vector = smooth_a + (1 - smooth_a) * (q_vector / np.max(q_vector))
         q_vector *= l_term
@@ -371,4 +412,4 @@ class IRModel:
                     "doc_metadata": self.metadata[i],
                 }
             )
-        return QueryResult(query, results)
+        return QueryResult(raw_query, results)
