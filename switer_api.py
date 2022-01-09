@@ -178,6 +178,9 @@ def build_database(database: str, force: bool = False):
     """
     Builds a database
     """
+    db_path = Path("./database")
+    if not db_path.exists():
+        db_path.mkdir()
     db_folder = Path(f"./database/{database}")
     if not db_folder.exists() or force:
         if database not in _BUILD_IN_DATABASES:

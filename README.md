@@ -2,7 +2,7 @@
 
 Switer (Swift Text Retrieval) es un CLI desarrollado en `typer` realizado como
 proyecto final de la asignatura Sistemas de Recuperación de Información
-(Ciencias de la compuación, Universidad de la Habana). Permite la creación de
+(Ciencias de la computación, Universidad de la Habana). Permite la creación de
 modelos vectoriales (tf-idf) de recuperación de información de texto para
 diversas bases de datos.
 
