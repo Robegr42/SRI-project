@@ -7,15 +7,15 @@ import os
 from pathlib import Path
 from typing import List, Optional
 
+import numpy as np
 import typer
 
 from db_cacm import build_cacm_db, cacm_query_tests
 from db_cisi import build_cisi_db, cisi_query_tests
 from db_cran import build_cran_db, cran_query_tests
+from db_lisa import build_lisa_db, lisa_query_tests
 from db_med import build_med_db, med_query_tests
 from db_npl import build_npl_db, npl_query_tests
-from db_lisa import build_lisa_db, lisa_query_tests
-
 from ir_model import DEFAULT_CONFIG, IRModel
 from model_tester import ModelTester, QueryTest
 
@@ -43,6 +43,7 @@ _DB_QUERY_TESTS = {
     "lisa": lisa_query_tests,
 }
 
+_TOPS = list(range(2, 100, 2))
 
 @app.command("clear-evals")
 def clear_evals(database: str):
@@ -124,6 +125,44 @@ def evaluate_model(
         _test_model(model, query_tests, True, compare, False)
 
 
+@app.command("compare")
+def compare(
+    models: Optional[List[str]] = typer.Option(
+        None,
+        "--models",
+        "-m",
+        help="Names of the databases to compare.",
+    ),
+):
+    """
+    Compares the results of the models of diferents databases.
+    """
+    use_all = models is None or not models
+
+    if use_all:
+        for _, dirs, _ in os.walk("./database"):
+            models = dirs
+            break
+
+    ret_vals = []
+    for model in models:
+        model_path = Path(f"./database/{model}/model")
+        if not model_path.exists():
+            typer.Exit(f"Model {model} does not exist")
+
+        last_test_path = None
+        for root, _, files in os.walk(model_path):
+            for file in files:
+                if file.startswith("test_"):
+                    last_test_path = os.path.join(root, file)
+                    ret_vals.append(np.load(last_test_path))
+                    break
+        if last_test_path is None:
+            typer.Exit(f"Model {model} does not have any tests")
+
+    ModelTester.plot_mean_results(ret_vals, models, _TOPS)
+
+
 def _test_model(
     model: IRModel,
     query_tests: List[QueryTest],
@@ -135,8 +174,7 @@ def _test_model(
     Tests the model for a given database.
     """
     tester = ModelTester(model, force, compare)
-    tops = list(range(2, 100, 2))
-    tester.test(query_tests, tops, show)
+    tester.test(query_tests, _TOPS, show)
 
 
 @app.command("single")
