@@ -1,10 +1,8 @@
 import os
 from pathlib import Path
 
+import switer_api as api
 import streamlit as st
-
-
-import main_api as api
 
 state_vars = [
     "docs",
@@ -21,8 +19,10 @@ for var in state_vars:
     if var not in st.session_state:
         st.session_state[var] = None
 
+
 def reset_search():
     st.session_state.results = []
+
 
 def reset():
     st.session_state.docs = None
@@ -112,9 +112,9 @@ with cols[1]:
 
 if st.session_state.query:
     if not st.session_state.results:
-        st.session_state.results = list(api.single_query(
-            st.session_state.query, st.session_state.model
-        ))
+        st.session_state.results = list(
+            api.single_query(st.session_state.query, st.session_state.model)
+        )
     results = []
     for i, res in enumerate(st.session_state.results):
         if i >= limit:

@@ -1,4 +1,10 @@
-# SRI Final Project
+# Switer
+
+Switer (Swift Text Retrieval) es un CLI desarrollado en `typer` realizado como
+proyecto final de la asignatura Sistemas de Recuperación de Información
+(Ciencias de la compuación, Universidad de la Habana). Permite la creación de
+modelos vectoriales (tf-idf) de recuperación de información de texto para
+diversas bases de datos.
 
 ## Cómo instalar dependencias ncesesarias
 
@@ -9,26 +15,26 @@ pip install -r requirements.txt
 ## Cómo ejecutar el programa
 
 ```sh
-python main.py
+python switer.py
 ```
 
 Con el argumento `--help` se puede ver la ayuda del programa.
 ```sh
-python main.py --help
+python switer.py --help
 ```
 
 ## Comandos disponibles
 
 La aplicación consta de 3 comandos: `continuous` (permite realizar varias
-consultas), `single` (procesa una sola consulta) y `test` (prueba la capasidad
-del modelo implementado). Si no se especifica uno de estos comandos, se ejecuta
-el comando `continuous` por defecto.
+consultas), `single` (procesa una sola consulta) y `evaluate` (prueba la
+capacidad del modelo implementado). Si no se especifica uno de estos comandos,
+se ejecuta el comando `continuous` por defecto.
 
 De forma adicional se puede ver la ayuda de cada uno de estos comandos:
 ```sh
-python main.py continuous --help
-python main.py single --help
-python main.py evaluate --help
+python switer.py continuous --help
+python switer.py single --help
+python switer.py evaluate --help
 ```
 
 ## Como añadir una base de datos nueva
@@ -70,14 +76,14 @@ cada consulta). Esta operación puede tomar un poco de tiempo y se puede realiza
 ejecutando el comando:
 
 ```shell
-python main.py build-model [db_name]
+python switer.py build-model [db_name]
 ```
 
 Finalmente para realizar búsquedas sobre la base de datos añadida es solo
 ejecutar:
 
 ```shell
-python main.py --database [db_name]
+python switer.py --database [db_name]
 ```
 
 ## Construcción del modelo
@@ -86,26 +92,26 @@ Para la construcción de un modelo a partir de una base de datos ya creada se ut
 el comando `build` de la siguiente forma:
 
 ```shell
-python main.py build-model [db_name]
+python switer.py build-model [db_name]
 ```
 
 A este comando (de forma opcional) se le puede asignar un archivo de
 configuración que definirá cómo se construirá el modelo:
 
 ```shell
-python main.py build-model [db_name] -c [config_file]
-python main.py build-model [db_name] --config [config_file]
+python switer.py build-model [db_name] -c [config_file]
+python switer.py build-model [db_name] --config [config_file]
 ```
 
 > Ejemplo:
 > ```shell
-> python main.py build cran -c config.json
+> python switer.py build cran -c config.json
 > ```
 
 Se puede generar un archivo de configuración por defecto con el comando:
 
 ```shell
-python main.py gen-config
+python switer.py gen-config
 ```
 
 > La configuración que genera el comando anterior el que se usa si no se
@@ -114,7 +120,7 @@ python main.py gen-config
 Para una descripción más detallada de las diferentes configuraciones:
 
 ```shell
-python main.py gen-config --help
+python switer.py gen-config --help
 ```
 
 ## Evaluación
@@ -122,12 +128,12 @@ python main.py gen-config --help
 Para evaluar un modelo de una base de datos:
 
 ```shell
-python main.py evaluate [nombre]
+python switer.py evaluate [nombre]
 ```
 
 > Ejemplo:
 > ```shell
-> python main.py evaluate cran
+> python switer.py evaluate cran
 > ```
 
 Si el modelo de la base de datos cambia entonces el comando anterior realizará
@@ -138,12 +144,26 @@ Si se quieren realizar comparaciones de las métricas entre todas las evaluacion
 hechas se usa el comando `--compare` (o `-cm`):
 
 ```shell
-python main.py evaluate [nombre] -cm
+python switer.py evaluate [nombre] -cm
 ```
 
 También se pueden construir varios modelos usando varios archivos de configuración
 y evaluarlos en un solo comando usando la opción `--configs` (o `-cf`):
 
 ```shell
-python main.py evaluate [nombre] -cf config.json -cf adv_config.json
+python switer.py evaluate [nombre] -cf config.json -cf adv_config.json
+```
+
+## Abrir Switer desde streamlit
+
+En caso de no tener streamlit:
+
+```shell
+pip install streamlit
+```
+
+Para ejecutar la aplicación:
+
+```shell
+streamlit run sl_app.py
 ```

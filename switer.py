@@ -7,7 +7,7 @@ from typing import List, Optional
 
 import typer
 
-import main_api as api
+import switer_api as api
 from ir_model import IRModel
 from query import QueryResult
 
