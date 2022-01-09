@@ -318,6 +318,7 @@ class IRModel:
             A list of relevant documents.
         """
 
+        raw_query = raw_query.lower()
         tok_func = self._get_tokenization_func(self.model_info["config"])
         words = set(tok_func(raw_query))
         smooth_a = self.model_info["config"]["query_alpha_smoothing"]
