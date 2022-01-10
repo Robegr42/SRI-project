@@ -19,7 +19,82 @@ datos, el usuario debe realizar primero dos acciones:
 	\item Construir el modelo de RI de la base de datos construida.
 \end{enumerate}
 
-\subsection{Construcción de la base de datos}\label{sec:build-database}
+Luego de ello, el usuario puede realizar consultas a la base de datos o
+evaluar el modelo de RI de alguna de las bases de datos ya integradas. En
+la figura \ref{fig:interaction} se muestra un simple esquema de la
+interacción con la aplicación.
 
-\subsection{Construcción del modelo}\label{sec:model}
+\begin{figure}[htb]%
+	\begin{center}
+		\includegraphics[width=0.8\textwidth]{./sri_01.png}
+	\end{center}
+	\caption{interacción del usuario con la aplicación}
+	\label{fig:interaction}
+\end{figure}
 
+\subsection{Estructura de la base de datos}\label{sec:build-database}
+
+Una base de datos en la aplicación está constituida por dos archivos:
+\emph{docs.json} y \emph{metadata.json}. El primero representa
+una lista donde cada posición contiene el texto de un documento. El
+segundo archivo contiene una lista de diccionarios donde cada uno
+contiene los metadatos del documento de mísmo índice.
+
+\subsection{Modelo}\label{sec:model}
+
+El modelo de una base de datos se construye de acuerdo a los paramentros de
+configuración. Estos parametros son:
+
+\begin{itemize}
+	\item \textbf{tokenization\_method}: Método de tokenización de los
+		documentos. Puede ser \emph{split} o \emph{nltk}. En caso de ser
+		\emph{split} su usará la función \emph{split} de Python y se
+		dividirá el texto solo por espacios. En caso de ser \emph{nltk} se
+		usará la función \emph{word\_tokenize} de NLTK.
+	\item \textbf{include\_metadata}: Una lista con los nombres de los
+		metadatos que se desean incluir en el texto para construir el modelo.
+	\item \textbf{query\_alpha\_smoothing}: Valor del parámetro $\alpha$ usado
+		para suavisar el vector de la consulta.
+	\item \textbf{remove\_stopwords}: Si es \emph{true} se eliminarán las
+		palabras comunes.
+	\item \textbf{remove\_punctuation}: Si es \emph{true} se eliminarán los
+		puntuaciones.
+	\item \textbf{lemmatization}: Si es \emph{true} se lematizarán las
+		palabras.
+	\item \textbf{stemming}: Si es \emph{true} se agregará también la raíz de
+		cada palabra al documento.
+\end{itemize}
+
+Como se puede observar la mayoria de los parámetros están relacionados
+con el proceso de tokenización de los documentos, ya que esta es una de las
+operaciones más importantes para construir el modelo.
+
+La figura \ref{fig:model-build} muestra un esquema del proceso de construcción del
+modelo.
+
+\begin{figure}[htb]%
+	\begin{center}
+		\includegraphics[width=0.8\textwidth]{./sri_02.png}
+	\end{center}
+	\caption{Construcción de un modelo}
+	\label{fig:model-build}
+\end{figure}
+
+Primeramente se cargan los textos del archivo \emph{docs.json} de la base de
+datos. A cada texto se le agrega según la configuración los metadatos necesarios.
+
+Luego se procede a la construcción de la función que tokeniza cada documento.
+Esta función se construye en base a los parametros establecidos en el archivo
+de configuración. Una vez contruida, se extraen los las palabras (tokens) de
+cada docuemnto y se calcula la frecuencia de cada una de ellas por cada uno de
+los textos. Posteriormente se construye el vocabulario del modelo con el
+conjunto de todas las palabras.
+
+Con la información de las frecuencias se crea la tabla de frecuencia de palabra
+por documento y se normaliza (\emph{term frecuency} o TF). Se calcula además el
+vector de frecuencia inversa por documento (\emph{inverse document frequency} o
+IDF). Luego se construye la tabla TF-IDF con los datos anteriores.
+
+Finalmente, se almacena la tabla TF-IDF junto con información adicional del modelo
+como: \emph{id} (un identificador único), fecha y duración de la construcción, así
+como la configuración usada.
