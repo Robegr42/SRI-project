@@ -1,0 +1,46 @@
+Como se ha podido apreciar en el desarrollo de este trabajo, \emph{tf-idf} es
+un eficiente y simple algoritmo para hacer coincidir palabras en una consulta
+con documentos que son relevantes para esa consulta \cite{ramos}. Como cada
+modelo de RI, este tiene aspectos que lo hacen beneficioso, y al mismo tiempo,
+a pesar de la fuerza del modelo, se escapan algunos puntos que le imponen
+limitaciones.
+
+\subsection{Ventajas}
+
+\subsubsection{Esquema de Ponderación}
+
+El modelo vectorial es muy versátil y eficiente a la hora de generar rankings
+de precisión en colecciones de gran tamaño, lo que le hace idóneo para
+determinar la equiparación parcial de los documentos. 
+
+\subsubsection{Coincidencia Parcial}
+
+La estrategia de coincidencia parcial permite la recuperación de documentos
+que se aproximen a los requerimientos de la consulta. De esta forma quizas se
+tengan documentos recuperados que no cumplan con todas las características de
+la consulta, sino una parte considerable de la misma, los cuales son relevantes
+a la consulta hecha.
+
+\subsubsection{Medida de Similitud}
+
+Se demuestra la eficacia de la \emph{fórmula del coseno} como métrica que
+ordena los documentos de acuerdo al grado de similitud con la consulta,
+aprovechádose de resultados \emph{geométrico-algebráicos} que plantean la
+similitud entre vectores de acuerdo al coseno del ángulo que ellos determinan. 
+
+\subsection{Desventajas}
+
+\subsubsection{Estructura del Lenguaje}
+
+Al ser un modelo estadístico-matemático, no tiene en cuenta la estructura
+sintáctico-semántica del lenguaje natural. En general recupera documentos
+cuando hay igualdad de palabras entre el documento y la consulta no tiene en
+cuenta, por ejemplo, sinónimos.
+
+\subsubsection{Umbral de Relevancia}
+
+Establecer un umbral para definir que documentos son relevantes y cuales no es
+un valor que no es fijo y fiable a cada colección, o sea, para cada colección
+hay que probar y reajustar para ver que umbral se ajusta mejor y permite tener
+métricas de evaluación más compensadas.
+
