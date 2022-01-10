@@ -1,5 +1,5 @@
 import os
-from typing import List, Optional, Union
+from typing import List, Optional, Tuple, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -103,8 +103,7 @@ class QueryTestResult:
             top = len(self.rel_indices)
         all_ret = self.ret_indices[:top]
         rel_ret = [i for i in self.rel_indices if i in all_ret]
-        total_ret = len(all_ret)
-        return len(rel_ret) / total_ret if total_ret > 0 else None
+        return len(rel_ret) / top if top > 0 else None
 
     def recall(self, top: Optional[int] = None) -> Union[float, None]:
         """
@@ -160,33 +159,21 @@ class ModelTester:
         all_f1 = np.array([res.f1_val for res in results])
         all_fallout = np.array([res.fallout_val for res in results])
 
-        # Filter out None values
-        not_none_inx = all_pres != None
-        not_none_inx = np.logical_and(not_none_inx, all_recall != None)
-        not_none_inx = np.logical_and(not_none_inx, all_f1 != None)
-        not_none_inx = np.logical_and(not_none_inx, all_fallout != None)
-        ignored_idx = len(results) - np.sum(not_none_inx)
+        idx = all_pres != None
+        pres_mean, pres_std = np.mean(all_pres[idx]), np.std(all_pres[idx])
+        pres_min, pres_max = np.min(all_pres[idx]), np.max(all_pres[idx])
 
-        if ignored_idx == len(results):
-            print("No results to show.")
-            return np.zeros((5, 4))
+        idx = all_recall != None
+        recall_mean, recall_std = np.mean(all_recall[idx]), np.std(all_recall[idx])
+        recall_min, recall_max = np.min(all_recall[idx]), np.max(all_recall[idx])
 
-        all_pres = all_pres[not_none_inx]
-        all_recall = all_recall[not_none_inx]
-        all_f1 = all_f1[not_none_inx]
-        all_fallout = all_fallout[not_none_inx]
+        idx = all_f1 != None
+        f1_mean, f1_std = np.mean(all_f1[idx]), np.std(all_f1[idx])
+        f1_min, f1_max = np.min(all_f1[idx]), np.max(all_f1[idx])
 
-        pres_mean, pres_std = np.mean(all_pres), np.std(all_pres)
-        pres_min, pres_max = np.min(all_pres), np.max(all_pres)
-
-        recall_mean, recall_std = np.mean(all_recall), np.std(all_recall)
-        recall_min, recall_max = np.min(all_recall), np.max(all_recall)
-
-        f1_mean, f1_std = np.mean(all_f1), np.std(all_f1)
-        f1_min, f1_max = np.min(all_f1), np.max(all_f1)
-
-        fallout_mean, fallout_std = np.mean(all_fallout), np.std(all_fallout)
-        fallout_min, fallout_max = np.min(all_fallout), np.max(all_fallout)
+        idx = all_fallout != None
+        fallout_mean, fallout_std = np.mean(all_fallout[idx]), np.std(all_fallout[idx])
+        fallout_min, fallout_max = np.min(all_fallout[idx]), np.max(all_fallout[idx])
 
         scores = np.array([res.ret_scores[:top] for res in results])
         scores_mean, scores_std = np.mean(scores), np.std(scores)
@@ -265,7 +252,7 @@ class ModelTester:
                 ax.set_xlabel("Top")
                 ax.set_ylabel("Mean")
             fig.suptitle("Models comparison", fontsize=16)
-            alphas = np.linspace(0.8, 0.2, num=len(test_files))
+            alphas = np.linspace(0.8, 0.4, num=len(test_files))
             alphas[0] = 1.0
             test_files = test_files[::-1]
             i = 0
@@ -357,8 +344,21 @@ class ModelTester:
         plt.plot(tops, all_scores_mean, line, alpha=alpha, color=ccolor, label=legend)
         plt.title("Scores")
 
+    def filter_ret_vals_and_tops(
+        self, ret_vals: np.ndarray, tops: List[int]
+    ) -> Tuple[np.ndarray, List[int]]:
+        """
+        Filter the results and tops.
+        """
+        invalid_idx = [i for i, val in enumerate((ret_vals == -1)[:, 0, 0]) if val]
+        ret_vals = np.delete(ret_vals, invalid_idx, axis=0)
+        tops = [top for i, top in enumerate(tops) if i not in invalid_idx]
+        return ret_vals, tops
+
     def show_results(self, ret_val: np.ndarray, tops: List[int]):
         """Show results of a single test."""
+
+
         all_pres_mean = ret_val[:, 0, 0]
         all_pres_std = ret_val[:, 0, 1]
         all_pres_min = ret_val[:, 0, 2]

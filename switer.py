@@ -195,7 +195,8 @@ def build_database(
     'DatabaseCreator.create(...)' method.
     """
     try:
-        api.build_database(database, force)
+        for msg in api.build_database(database, force):
+            typer.echo(msg)
     except Exception as e:
         typer.echo(e)
 
@@ -220,8 +221,7 @@ def build_database_model(
     Builds the model for a database
     """
     try:
-        for msg in api.build_database_model(database, config_file, force):
-            typer.echo(msg)
+        api.build_database_model(database, config_file, force)
     except Exception as e:
         typer.echo(e)
 

@@ -17,7 +17,7 @@ import typer
 from nltk import pos_tag, word_tokenize
 from nltk.corpus import stopwords
 from nltk.corpus import wordnet as wn
-from nltk.stem import WordNetLemmatizer
+from nltk.stem import WordNetLemmatizer, PorterStemmer
 
 from display_tools import pbar
 from query import QueryResult
@@ -29,8 +29,11 @@ DEFAULT_CONFIG = {
     "remove_stopwords": False,
     "remove_punctuation": False,
     "lemmatization": False,
+    "stem": False,
 }
 
+
+_stemmer = PorterStemmer()
 
 def _nltk_pos_tagger(nltk_tag):
     if nltk_tag.startswith("J"):
@@ -117,7 +120,7 @@ class IRModel:
         docs = self._get_documents()
         for key in self.config["include_metadata"]:
             if key in self.metadata:
-                docs += " " + self.metadata[key]
+                docs += " " + self.metadata[key] * 5
         self.docs = docs
 
         # Tokenize texts by words
@@ -209,11 +212,18 @@ class IRModel:
             raise typer.Exit(f"Unknown tokenization method: {method}")
 
         def tokenization_func(text: str) -> List[str]:
+            text = text.replace("-", " ")
             remove_stopwords = config["remove_stopwords"]
             remove_punctuation = config["remove_punctuation"]
             tokens = tok_func(text)
             if config["lemmatization"]:
                 tokens = self._lemmatize_tokens(tokens)
+            if config["stem"]:
+                steammed = []
+                for tok in tokens:
+                    steammed.append(_stemmer.stem(tok))
+                tokens.extend(steammed)
+
             to_remove = []
             if remove_stopwords:
                 to_remove += stopwords.words("english")
@@ -299,6 +309,10 @@ class IRModel:
         float
             The similarity between the two vectors.
         """
+        norm1 = np.linalg.norm(vector_1)
+        norm2 = np.linalg.norm(vector_2)
+        if norm1 == 0 or norm2 == 0:
+            return 0
         return np.dot(vector_1, vector_2) / (
             np.linalg.norm(vector_1) * np.linalg.norm(vector_2)
         )
@@ -321,6 +335,7 @@ class IRModel:
         raw_query = raw_query.lower()
         tok_func = self._get_tokenization_func(self.model_info["config"])
         words = set(tok_func(raw_query))
+        # print(words)
         smooth_a = self.model_info["config"]["query_alpha_smoothing"]
         results = []
 
