@@ -51,7 +51,7 @@ def build_cran_db():
                     break
 
             if state == ReadState.NEWFILE:
-                if text:
+                if doc_id is not None:
                     metadata.append(
                         {
                             "doc_id": doc_id,
@@ -60,8 +60,9 @@ def build_cran_db():
                             "pub": " ".join(pub),
                         }
                     )
+                    assert int(doc_id) == len(metadata)
                     texts.append(" ".join(text))
-                title, authors, pub, text = [], [], [], []
+                    title, authors, pub, text = [], [], [], []
                 doc_id = line[3:-1]
 
             if state is None or in_header:
@@ -75,6 +76,16 @@ def build_cran_db():
                 pub.append(line.strip())
             elif state == ReadState.TEXT:
                 text.append(line.strip())
+
+    metadata.append(
+        {
+            "doc_id": doc_id,
+            "title": " ".join(title),
+            "authors": " ".join(authors),
+            "pub": " ".join(pub),
+        }
+    )
+    texts.append(" ".join(text))
 
     DatabaseBuilder.build("cran", metadata, texts)
 

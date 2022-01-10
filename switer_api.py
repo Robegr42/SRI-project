@@ -97,9 +97,9 @@ def evaluate_model(
 
     for config in configs:
         yield f"\nBuilding model using {config}"
-        build_database_model(database, config)
+        build_database_model(database, config, force=True)
         model = IRModel(str(db_folder))
-        _test_model(model, query_tests, True, compare, False)
+        _test_model(model, query_tests, force=True, compare_tests=compare, show=False)
 
 
 def compare(models: Optional[List[str]] = None):
@@ -209,4 +209,3 @@ def build_database_model(
         IRModel(str(db_folder), True, config_file)
     else:
         raise ValueError(f"Database {database} already has a model folder")
-    yield None
