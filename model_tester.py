@@ -8,6 +8,19 @@ import typer
 from display_tools import pbar
 from ir_model import IRModel
 
+PLT_COLORS = [
+    "#1f77b4",
+    "#ff7f0e",
+    "#2ca02c",
+    "#d62728",
+    "#9467bd",
+    "#8c564b",
+    "#e377c2",
+    "#7f7f7f",
+    "#bcbd22",
+    "#17becf",
+]
+
 
 class QueryTest:
     """
@@ -24,6 +37,9 @@ class QueryTest:
     def __init__(self, query: str, rel_indices: List[int]):
         self.query = query
         self.rel_indices = rel_indices
+
+    def __repr__(self):
+        return f"(QueryTest(query={self.query}, rel_indices={self.rel_indices})"
 
 
 class QueryTestResult:
@@ -150,6 +166,11 @@ class ModelTester:
         not_none_inx = np.logical_and(not_none_inx, all_f1 != None)
         not_none_inx = np.logical_and(not_none_inx, all_fallout != None)
         ignored_idx = len(results) - np.sum(not_none_inx)
+
+        if ignored_idx == len(results):
+            print("No results to show.")
+            return np.zeros((5, 4))
+
         all_pres = all_pres[not_none_inx]
         all_recall = all_recall[not_none_inx]
         all_f1 = all_f1[not_none_inx]
@@ -238,27 +259,55 @@ class ModelTester:
         test_files.append(test_file)
 
         if self.compare:
-            typer.echo("Comparing with other old tests...")
             fig, axs = plt.subplots(2, 3, figsize=(12, 7))
             for ax in axs.flatten():
                 ax.grid(True)
                 ax.set_xlabel("Top")
                 ax.set_ylabel("Mean")
             fig.suptitle("Models comparison", fontsize=16)
-            alphas = np.linspace(0.8, 0.4, num=len(test_files))
+            alphas = np.linspace(0.8, 0.2, num=len(test_files))
             alphas[0] = 1.0
             test_files = test_files[::-1]
             i = 0
             for alpha, test_file in zip(alphas, test_files):
                 other_ret_vals = np.load(test_file)
                 line = "-" if i == 0 else "--"
-                self.plot_comparison_results(other_ret_vals, tops, alpha, axs, line)
+                ModelTester.plot_comparison_results(
+                    other_ret_vals, tops, alpha, axs, line
+                )
                 i += 1
             plt.tight_layout()
             plt.show()
 
+    @staticmethod
+    def plot_mean_results(ret_vals: List[np.ndarray], names: List[str], tops):
+        fig, axs = plt.subplots(2, 3, figsize=(12, 7))
+        for ax in axs.flatten():
+            ax.grid(True)
+            ax.set_xlabel("Top")
+            ax.set_ylabel("Mean")
+        for i, ret_val in enumerate(ret_vals):
+            name = names[i]
+            color = PLT_COLORS[i % len(PLT_COLORS)]
+            fig.suptitle("Models comparison", fontsize=16)
+            ModelTester.plot_comparison_results(
+                ret_val, tops, 1, axs, "-", color, legend=name
+            )
+            i += 1
+            plt.tight_layout()
+        for ax in axs.flatten():
+            ax.legend()
+        plt.show()
+
+    @staticmethod
     def plot_comparison_results(
-        self, ret_val: np.ndarray, tops: List[int], alpha: float, axs, line
+        ret_val: np.ndarray,
+        tops: List[int],
+        alpha: float,
+        axs,
+        line,
+        color=None,
+        legend: str = None,
     ):
         """
         Show the comparison results.
@@ -270,29 +319,42 @@ class ModelTester:
         all_scores_mean = ret_val[:, 4, 0]
 
         plt.sca(axs[0, 0])
-        plt.plot(tops, all_pres_mean, line, alpha=alpha, color="blue")
+        ccolor = color if color is not None else "blue"
+        plt.plot(tops, all_pres_mean, line, alpha=alpha, color=ccolor, label=legend)
         plt.title("Precision")
 
         plt.sca(axs[0, 1])
-        plt.plot(tops, all_recall_mean, line, alpha=alpha, color="orange")
+        ccolor = color if color is not None else "orange"
+        plt.plot(tops, all_recall_mean, line, alpha=alpha, color=ccolor, label=legend)
         plt.title("Recall")
 
         plt.sca(axs[0, 2])
-        plt.plot(all_recall_mean, all_pres_mean, line, alpha=alpha, color="blue")
+        ccolor = color if color is not None else "blue"
+        plt.plot(
+            all_recall_mean,
+            all_pres_mean,
+            line,
+            alpha=alpha,
+            color=ccolor,
+            label=legend,
+        )
         plt.xlabel("Recall")
         plt.ylabel("Precision")
         plt.title("Precision vs. Recall")
 
         plt.sca(axs[1, 0])
-        plt.plot(tops, all_f1_mean, line, alpha=alpha, color="green")
+        ccolor = color if color is not None else "green"
+        plt.plot(tops, all_f1_mean, line, alpha=alpha, color=ccolor, label=legend)
         plt.title("F1")
 
         plt.sca(axs[1, 1])
-        plt.plot(tops, all_fallout_mean, line, alpha=alpha, color="red")
+        ccolor = color if color is not None else "red"
+        plt.plot(tops, all_fallout_mean, line, alpha=alpha, color=ccolor, label=legend)
         plt.title("Fallout")
 
         plt.sca(axs[1, 2])
-        plt.plot(tops, all_scores_mean, line, alpha=alpha, color="purple")
+        ccolor = color if color is not None else "purple"
+        plt.plot(tops, all_scores_mean, line, alpha=alpha, color=ccolor, label=legend)
         plt.title("Scores")
 
     def show_results(self, ret_val: np.ndarray, tops: List[int]):

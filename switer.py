@@ -2,23 +2,20 @@
 Main module for the application.
 """
 
-import json
-import os
 from pathlib import Path
 from typing import List, Optional
 
 import typer
 
-from cran_db import build_db as build_cran_db
-from cran_db import query_tests as cran_query_tests
-from ir_model import DEFAULT_CONFIG, IRModel
-from model_tester import ModelTester, QueryTest
+import switer_api as api
+from ir_model import IRModel
+from query import QueryResult
 
 app = typer.Typer(add_completion=False)
 
 status = {}
 
-_BUILD_IN_DATABASES = ["cran"]
+_BUILD_IN_DATABASES = ["cran", "cisi", "med"]
 
 
 @app.command("clear-evals")
@@ -31,11 +28,8 @@ def clear_evals(database: str):
         default=True,
     ):
         return
-    for root, _, files in os.walk(f"database/{database}/model/"):
-        for file in files:
-            if file.startswith("test_"):
-                typer.echo(f"Removing {root}{file}")
-                os.remove(os.path.join(root, file))
+    for deleted_test in api.clear_evals(database):
+        typer.echo(f"Removed: {deleted_test}")
 
 
 @app.command("evaluate")
@@ -82,39 +76,36 @@ def evaluate_model(
 
     WARNING: The current model will be overwritten.
     """
-    if database not in _BUILD_IN_DATABASES:
-        raise typer.Exit(f"Database {database} is not supported for evaluation")
-
-    typer.echo("Parsing query tests")
-    if database == "cran":
-        query_tests = cran_query_tests()
-
-
-    if configs is None or not configs:
-        _test_model(status["model"], query_tests, force, compare)
-        return
-
-    db_folder = Path(f"./database/{database}")
-    for config in configs:
-        typer.echo(f"\nBuilding model using {config}")
-        build_database_model(database, config)
-        model = IRModel(str(db_folder))
-        _test_model(model, query_tests, True, compare, False)
+    try:
+        for msg in api.evaluate_model(
+            database,
+            force,
+            compare,
+            configs,
+        ):
+            typer.echo(msg)
+    except Exception as e:
+        typer.echo(e)
 
 
-def _test_model(
-    model: IRModel,
-    query_tests: List[QueryTest],
-    force: bool,
-    compare: bool,
-    show: bool = True,
+@app.command("compare")
+def compare(
+    models: Optional[List[str]] = typer.Option(
+        None,
+        "--models",
+        "-m",
+        help="Names of the databases to compare.",
+    ),
 ):
     """
-    Tests the model for a given database.
+    Compares the results of the models of diferents databases.
     """
-    tester = ModelTester(model, force, compare)
-    tops = list(range(2, 100, 2))
-    tester.test(query_tests, tops, show)
+
+    try:
+        for msg in api.compare(models):
+            typer.echo(msg)
+    except Exception as e:
+        typer.echo(str(e))
 
 
 @app.command("single")
@@ -124,11 +115,9 @@ def single_query(query: str):
     """
     # Search documents
     model = status["model"]
-    results = model.search(query)
-
     # Display results
-    for res in results:
-        results.show_result(res)
+    for res in api.single_query(query, model):
+        QueryResult.show_result(res)
         if not typer.confirm("See next result?", default=True):
             break
 
@@ -182,10 +171,10 @@ def generate_config(
         building the model. If key does not exist, it will be ignored. By
         default, metadata is not included (Empty list).
     """
-    if Path(output).exists() and not force:
-        raise typer.Exit(f"File {output} already exists\n\nUse --force to overwrite")
-    with open(output, "w") as config_f:
-        json.dump(DEFAULT_CONFIG, config_f, indent=4)
+    try:
+        api.generate_config(output, force)
+    except Exception as e:
+        typer.echo(e)
 
 
 @app.command("build-db")
@@ -205,21 +194,10 @@ def build_database(
     database other than 'cran', you can do it manually or by using the
     'DatabaseCreator.create(...)' method.
     """
-    db_folder = Path(f"./database/{database}")
-    if not db_folder.exists() or force:
-        if database not in _BUILD_IN_DATABASES:
-            raise typer.Exit(
-                f"Rebuild not suported for database '{database}'.\n\n"
-                "Please build your own database using the 'DatabaseCreator'\n"
-                "class available in 'database_creator.py'"
-            )
-        typer.echo(f"Building the '{database}' database")
-        if database == "cran":
-            build_cran_db()
-    else:
-        raise typer.Exit(
-            f"Database {database} already exists\n\nUse --force to overwrite"
-        )
+    try:
+        api.build_database(database, force)
+    except Exception as e:
+        typer.echo(e)
 
 
 @app.command("build-model")
@@ -241,17 +219,11 @@ def build_database_model(
     """
     Builds the model for a database
     """
-    db_folder = Path(f"./database/{database}")
-    model_folder = db_folder / "model"
-    if not db_folder.exists():
-        raise typer.Exit(f"Database {database} does not exist")
-    if not model_folder.exists() or force:
-        IRModel(str(db_folder), True, config_file)
-    else:
-        raise typer.Exit(
-            f"Database {database} already has a model folder\n\n"
-            "Use --force to overwrite"
-        )
+    try:
+        for msg in api.build_database_model(database, config_file, force):
+            typer.echo(msg)
+    except Exception as e:
+        typer.echo(e)
 
 
 @app.callback(invoke_without_command=True)
@@ -278,7 +250,7 @@ def main(
     invoked_cmd = ctx.invoked_subcommand
 
     # Load the model if command is not build
-    if invoked_cmd is None or not invoked_cmd.startswith("build"):
+    if invoked_cmd is None or invoked_cmd in ["continuous", "single"]:
         status["model"] = IRModel(str(db_folder))
 
     # Run the continuous queries command by default

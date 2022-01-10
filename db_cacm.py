@@ -6,6 +6,7 @@ import typer
 
 from database_builder import DatabaseBuilder
 from model_tester import QueryTest
+from display_tools import pbar
 
 
 class ReadState(Enum):
@@ -16,33 +17,37 @@ class ReadState(Enum):
     NEWFILE = 0
     TITLE = 1
     AUTHORS = 2
-    PUB = 3
-    TEXT = 4
+    DATE = 3
+    PUB = 4
+    TEXT = 5
+    XPES = 6
 
 
-def build_db():
+def build_cacm_db():
     """
-    Creates the cran database.
+    Creates the cacm database.
     """
     metadata: List[Dict[str, Any]] = []
     texts: List[str] = []
-    cran_file = Path("./test_collections/cran/cran.all.1400")
-    if not cran_file.exists():
-        raise FileNotFoundError(f"{cran_file} does not exist.")
+    cacm_file = Path("./test_collections/cacm/cacm.all")
+    if not cacm_file.exists():
+        raise FileNotFoundError(f"{cacm_file} does not exist.")
 
     header_state = {
         ".I": ReadState.NEWFILE,
         ".T": ReadState.TITLE,
         ".A": ReadState.AUTHORS,
+        ".N": ReadState.DATE,
         ".B": ReadState.PUB,
         ".W": ReadState.TEXT,
+        ".X": ReadState.XPES,
     }
 
-    with open(cran_file, "r") as cran_f:
+    with open(cacm_file, "r") as cacm_f:
         state = None
-        title, authors, pub, text = [], [], [], []
+        title, authors, date, pub, text = [], [], [], [], []
         doc_id = None
-        for line in cran_f:
+        for line in cacm_f:
             in_header = False
             for header, stt in header_state.items():
                 if line.startswith(header):
@@ -57,34 +62,37 @@ def build_db():
                             "doc_id": doc_id,
                             "title": " ".join(title),
                             "authors": " ".join(authors),
+                            "date": " ".join(date),
                             "pub": " ".join(pub),
                         }
                     )
                     texts.append(" ".join(text))
-                title, authors, pub, text = [], [], [], []
+                title, authors, pub, date, text = [], [], [], [], []
                 doc_id = line[3:-1]
 
-            if state is None or in_header:
+            if state is None or in_header or state == ReadState.XPES:
                 continue
 
             if state == ReadState.TITLE:
                 title.append(line.strip())
             elif state == ReadState.AUTHORS:
                 authors.append(line.strip())
+            elif state == ReadState.DATE:
+                date.append(line.strip())
             elif state == ReadState.PUB:
                 pub.append(line.strip())
             elif state == ReadState.TEXT:
                 text.append(line.strip())
 
-    DatabaseBuilder.build("cran", metadata, texts)
+    DatabaseBuilder.build("cacm", metadata, texts)
 
 
-def query_tests() -> List[QueryTest]:
+def cacm_query_tests() -> List[QueryTest]:
     """
     Runs the query tests.
     """
-    queries_file = Path("./test_collections/cran/cran.qry")
-    relevants_file = Path("./test_collections/cran/cranqrel")
+    queries_file = Path("./test_collections/cacm/query.text")
+    relevants_file = Path("./test_collections/cacm/qrels.text")
     if not queries_file.exists():
         raise typer.Exit(f"{queries_file} does not exist.")
     if not relevants_file.exists():
@@ -93,13 +101,22 @@ def query_tests() -> List[QueryTest]:
     # Parse the queries
     typer.echo("Parsing queries...")
     queries = []
+    til_next_i = False
     with open(str(queries_file), "r") as qry_f:
         query_text = []
         for line in qry_f:
+            if not line:
+                continue
             if line.startswith(".I"):
+                til_next_i = False
                 if query_text:
                     queries.append(" ".join(query_text))
                     query_text = []
+                continue
+            if til_next_i:
+                continue
+            if line.startswith(".N"):
+                til_next_i = True
                 continue
             if line.startswith(".W"):
                 continue
@@ -113,7 +130,7 @@ def query_tests() -> List[QueryTest]:
 
     with open(str(relevants_file), "r") as rel_f:
         for line in rel_f:
-            query, doc_id, _ = [int(i) for i in line.split()]
+            query, doc_id, _, _ = [int(i) for i in line.split()]
             relevants[query - 1].append(doc_id)
 
     return [QueryTest(queries[i], relevants[i]) for i in range(len(queries))]
