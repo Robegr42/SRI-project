@@ -1,20 +1,31 @@
 Como parte fundamental de la creación de un SRI se tiene el proceso de
 evaluación, donde se determinará la eficacia del mismo.
 
-Para la evaluación del modelo propuesto se cuenta con varias colecciones de
-pruebas, cada una pertenecientes a las distintas colecciones de documentos con
-las que el modelo trabaja entre las cuales el usuario puede escoger para
-realizar sus consultas. Estás colecciones, a su vez, contienen un conjunto de
-consultas y la información de los documentos relevantes y no relevantes, de
-esta forma se determina el rendimiento del modelo.
+Para la evaluación del modelo propuesto se cuenta, como procedimiento estándar,
+con varias colecciones de pruebas, las cuales contienen lo siguiente:
 
-Para el proceso de evaluación se analiza la siguiente estructura, resultante
-del proceso de recuperación del modelo
+\begin{enumerate}
+    \item Una colección de documentos.
+    \item Un conjunto de pruebas a realizar sobre la colección, llamadas
+    consultas (\emph{queries}).
+    \item Un conjunto de juicios de relevancia, una evaluación mayormente
+    binaria sobre la relevancia de las consultas sobre los documentos (en
+    algunas de las colecciones utilizadas el espectro de evaluación no es tan
+    binario) 
+\end{enumerate}
 
-\begin{figure}[htb]%
-	\begin{center}
-		\includegraphics[width=0.5\textwidth]{./sri_03.png}
-	\end{center}
+Sobre la estructura de las colecciones utilizadas y descritas con anterioridad,
+trabaja el modelo, se realizan comparaciones y cálaculo de métricas que
+caracterizan la efectividad del mismo.
+
+\subsection{Proceso de Evaluación}
+
+Para el proceso de evaluación se analiza la siguiente estructura (a modo de
+ejemplo), resultante del proceso de recuperación del modelo.
+
+\begin{figure}[h!]%
+    \centering
+	\includegraphics[width=0.4\textwidth]{./sri_03.png}
 	\caption{Clasificación de los documentos después de una consulta.}
 	\label{fig:docSet}
 \end{figure}
@@ -27,23 +38,58 @@ Donde:
     \item {\bf NN:} Conjunto de documentos no relevantes no recuperados.
 \end{itemize}
 
-Sobre esta partición de conjuntos se aplican varias medidas de evaluación, con
-las cuales se verifican la efectividad del modelo, las mismas son:
+Para un mejor analisis de la relevancia, aunque partimos de la estructura
+anterior, se hace preciso el uso de nuevos conjuntos, a la par de los ya
+definidos.
 
 \begin{itemize}
-    \item Precisión
-    \item Recobrado (Recall)
-    \item Medida F
-    \item Medida F1
+    \item RI: Conjunto de documentos recuperados irrelevantes (REC$-$RR)
+    \item NR: Conjunto de documentos no recuperados relevantes (REL$-$RR)
+\end{itemize}
+
+Sobre esta partición de conjuntos se aplican varias medidas de evaluación, con
+las cuales se verifican la efectividad del modelo.
+
+\subsubsection{Métricas estándares}
+
+
+
+\begin{itemize}
+\item Precisión:
+    $$P = \dfrac{|RR|}{|RR \cup RI|}$$
+    Denota la calidad de la respuesta y la clasificación. A medida que aumenten
+    las cantidad de documentos de la colección y, por tanto, los documentos
+    recuperados, esta medida sea menor.\\
+\item Recobrado (Recall):
+    $$R = \dfrac{|RR|}{|RR \cup NR|}$$
+    A diferencia de la Precisión, esta medida aumenta mientras más documentos
+    se incorporan a la respuesta.\\
+\item Medida F:
+    $$F = \dfrac{(1+\beta^2)PR}{\beta^2P+R} = \dfrac{1+\beta^2}{\frac{1}{P}+
+    \frac{\beta^2}{R}}$$
+    Medida para enfatizar la Precisión contra el Recobrado o viceversa.
+    \begin{itemize}
+    \item $\beta =1$ Igual peso para la Precisión y el Recobrado ($F=F_1$).
+    \item $\beta >1$ Mayor peso para la Precisión.
+    \item $\beta =1$ Mayor peso para el Recobrado.\\
+    \end{itemize}
+\item Medida $F_1$:
+    $$F_1 = \dfrac{2PR}{P+R} = \dfrac{2}{\frac{1}{P} + \frac{1}{R}}$$
+    Medida que armoniza entre Precisión y Recobrado.
 \end{itemize}
 
 Estas medidas, aunque efectivas, no tienen en cuanta el \emph{ranking} de los
 documentos, por lo que para una mayor efectividad del modelo se emplean otras
-dos medidas para un mejor rendimiento, las cuales son:
+dos medidas para un mejor rendimiento.
+
+\subsubsection{Métricas Dependientes del \emph{Ranking}}
 
 \begin{itemize}
-    \item R-Precisión
-    \item Fallout 
+    \item R-Precisión:
+    La R-Precisión consiste en aplicar la fórmula de Precisión a partir de la
+    posición $R$ del ranking de documentos relevantes.\\
+    \item Fallout:
+        $$Fallout = \dfrac{|RI|}{|RI\cup NN|}$$
 \end{itemize}
 
 Se incluyen en el modelo, además, opciones de comparación entre varias
