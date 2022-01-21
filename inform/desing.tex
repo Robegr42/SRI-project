@@ -9,7 +9,8 @@ conforman la misma.
 De forma general el usuario tiene dos formas de interactuar con la aplicación:
 mediante una interfaz de lineas de comando en una terminal (\emph{Command Line
 Interface}, CLI por sus siglas en inglés) desarrollada usando \emph{typer} o
-mediante una interfaz gráfica desarrollada usando \emph{streamlit}.
+mediante una interfaz gráfica desarrollada usando \emph{streamlit} (ambas
+lbrerías de Python).
 
 Para hacer uso de la aplicación y comenzar a realizar consultas a una base de
 datos, el usuario debe realizar primero dos acciones:
@@ -28,7 +29,7 @@ interacción con la aplicación.
 	\begin{center}
 		\includegraphics[width=0.8\textwidth]{./sri_01.png}
 	\end{center}
-	\caption{interacción del usuario con la aplicación}
+	\caption{Interacción del usuario con la aplicación}
 	\label{fig:interaction}
 \end{figure}
 
@@ -40,7 +41,7 @@ una lista donde cada posición contiene el texto de un documento. El
 segundo archivo contiene una lista de diccionarios donde cada uno
 contiene los metadatos del documento de mísmo índice.
 
-\subsection{Modelo}\label{sec:model}
+\subsection{Modelos}\label{sec:model}
 
 El modelo de una base de datos se construye de acuerdo a los paramentros de
 configuración. Estos parametros son:
@@ -56,7 +57,7 @@ configuración. Estos parametros son:
 	\item \textbf{query\_alpha\_smoothing}: Valor del parámetro $\alpha$ usado
 		para suavisar el vector de la consulta.
 	\item \textbf{remove\_stopwords}: Si es \emph{true} se eliminarán las
-		palabras comunes.
+		palabras comunes (proporcionadas por \emph{nltk}).
 	\item \textbf{remove\_punctuation}: Si es \emph{true} se eliminarán los
 		puntuaciones.
 	\item \textbf{lemmatization}: Si es \emph{true} se lematizarán las
@@ -98,3 +99,28 @@ IDF). Luego se construye la tabla TF-IDF con los datos anteriores.
 Finalmente, se almacena la tabla TF-IDF junto con información adicional del modelo
 como: \emph{id} (un identificador único), fecha y duración de la construcción, así
 como la configuración usada.
+
+Cada base de datos contiene un único modelo, esto permite al usuario realizar
+diferentes modelos con diferentes configuraciones según la base de datos.
+
+\subsection{Consultas}\label{sec:query}
+
+Una vez construido el modelo, el usuario puede realizar consultas a la base de
+datos. Para ello, solo basta con especificar la base de datos que se quiere
+consultar y la consulta que se desea realizar. 
+
+Para procesar la consulta se utiliza la misma función de tokenización que se
+utilizó para construir el modelo. Las palabras que no estén en el vocabulario
+son ignoradas. Se calcula el vector de consulta y luego utilizando la operación
+de coseno entre vectores se calcula la relevancia de cada documento con
+respecto a la consulta. Una vez calculada las relevancias, se organiza los
+documentos de mayor a menor según este valor y se devuelven en este orden.
+
+En el caso del CLI proporcionado los documentos se van devolviendo uno a uno
+y en cada momento el usuario puede especificar si quiere ver el siguiente
+documento o no. En la aplicación web desarrollada con \emph{streamlit} en cada
+consulta el usuario puede establecer un numero máximo de documentos a mostrar
+y un peso de relevancia mínimo para los resultados.
+
+Cada resultado contiene el texo del documento, sus metadatos y la relevancia 
+obtenida de acuerdo a la consulta realizada.
