@@ -1,3 +1,5 @@
+\section{Evaluación}\label{sec:eval}
+
 Como parte fundamental de la creación de un SRI se tiene el proceso de
 evaluación, donde se determinará la eficacia del mismo.
 
@@ -18,79 +20,100 @@ Sobre la estructura de las colecciones utilizadas y descritas con anterioridad,
 trabaja el modelo, se realizan comparaciones y cálaculo de métricas que
 caracterizan la efectividad del mismo.
 
-\subsection{Proceso de Evaluación}
+\subsection{Métricas empleadas}\label{sec:metrics}
 
-Para el proceso de evaluación se analiza la siguiente estructura (a modo de
-ejemplo), resultante del proceso de recuperación del modelo.
-
-\begin{figure}[h!]%
-    \centering
-	\includegraphics[width=0.4\textwidth]{./sri_03.png}
-	\caption{Clasificación de los documentos después de una consulta.}
-	\label{fig:docSet}
-\end{figure}
-
-Donde:
-\begin{itemize}
-    \item {\bf REL:} Conjunto de documentos relevantes.
-    \item {\bf REC:} Conjunto de documentos recuperados.
-    \item {\bf RR:} Conjunto de documentos relevantes recuperados.
-    \item {\bf NN:} Conjunto de documentos no relevantes no recuperados.
-\end{itemize}
-
-Para un mejor analisis de la relevancia, aunque partimos de la estructura
-anterior, se hace preciso el uso de nuevos conjuntos, a la par de los ya
-definidos.
+Para realizar un análisis de la efectividad de cada modelo se emplearon 
+dversas métricas. Primero, se define como:
 
 \begin{itemize}
-    \item RI: Conjunto de documentos recuperados irrelevantes (REC$-$RR)
-    \item NR: Conjunto de documentos no recuperados relevantes (REL$-$RR)
+	\item RR: Documentos relevantes recuperados.
+	\item RI: Documentos irelevantes recuperados.
+	\item NR: Documentos relevantes no recuperados.
+	\item NI: Documentos irelevantes no recuperados.
+	\item P: Precisión.
+	\item R: Recobrado.
 \end{itemize}
 
-Sobre esta partición de conjuntos se aplican varias medidas de evaluación, con
-las cuales se verifican la efectividad del modelo.
-
-\subsubsection{Métricas estándares}
-
-
+Luego, las métricas usadas son:
 
 \begin{itemize}
 \item Precisión:
     $$P = \dfrac{|RR|}{|RR \cup RI|}$$
-    Denota la calidad de la respuesta y la clasificación. A medida que aumenten
-    las cantidad de documentos de la colección y, por tanto, los documentos
-    recuperados, esta medida sea menor.\\
+    Denota la proporción de los documentos relevantes recuperados sobre
+	el total de documentos recuperados.\\
 \item Recobrado (Recall):
     $$R = \dfrac{|RR|}{|RR \cup NR|}$$
-    A diferencia de la Precisión, esta medida aumenta mientras más documentos
-    se incorporan a la respuesta.\\
-\item Medida F:
-    $$F = \dfrac{(1+\beta^2)PR}{\beta^2P+R} = \dfrac{1+\beta^2}{\frac{1}{P}+
-    \frac{\beta^2}{R}}$$
-    Medida para enfatizar la Precisión contra el Recobrado o viceversa.
-    \begin{itemize}
-    \item $\beta =1$ Igual peso para la Precisión y el Recobrado ($F=F_1$).
-    \item $\beta >1$ Mayor peso para la Precisión.
-    \item $\beta =1$ Mayor peso para el Recobrado.\\
-    \end{itemize}
+	Denota la proporción de los documentos relevantes recuperados sobre
+	el total de documentos relevantes.\\
 \item Medida $F_1$:
     $$F_1 = \dfrac{2PR}{P+R} = \dfrac{2}{\frac{1}{P} + \frac{1}{R}}$$
-    Medida que armoniza entre Precisión y Recobrado.
+    Medida que armoniza entre Precisión y Recobrado.\\
+\item Fallout:
+	$$Fallout = \dfrac{|RI|}{|RI\cup NI|}$$
+     Denota la cantidad de documentos irrelevantes recuperados sobre el total de
+	 documentos irrelevantes.
 \end{itemize}
 
-Estas medidas, aunque efectivas, no tienen en cuanta el \emph{ranking} de los
-documentos, por lo que para una mayor efectividad del modelo se emplean otras
-dos medidas para un mejor rendimiento.
+\subsection{Proceso de evaluación}\label{sec:evaluation}
 
-\subsubsection{Métricas Dependientes del \emph{Ranking}}
+Para describir el proceso de evaluación primero es necesario definir el concepto
+de \emph{tope}. Este concepto se define como: los primeros $k$ documentos
+resultantes de una consulta.
 
-\begin{itemize}
-    \item R-Precisión:
-    La R-Precisión consiste en aplicar la fórmula de Precisión a partir de la
-    posición $R$ del ranking de documentos relevantes.\\
-    \item Fallout:
-        $$Fallout = \dfrac{|RI|}{|RI\cup NN|}$$
-\end{itemize}
+En el análisis de un modelo se calculan las métricas antes mencionadas, por
+cada consulta, para diferentes topes. De estas métricas se extraen valores
+estadísticos relevantes como: la media, la desviación estándar, el máximo y
+el mínimo, por cada uno de los topes establecido ($2, 4, 6, ..., 50$). Se
+analiza además, el comportamiento del promedio de las relevancias.
 
-Se incluyen en el modelo, además, opciones de comparación entre varias
-colecciones, con el fin de realizar análisis entre las mismas.
+De esta forma para cada modelo se puede analizar el comportamiento de las métricas
+estudiadas a medida que aumentamos la cantidad de documentos recuperados. En las
+figuras \ref{fig:cran-eval} y \ref{fig:med-eval} se muestran los resultados
+para el modelo de Cran y el modelo de Medline respectivamente. Como se puede
+observar, el modelo de Medline, presenta una mayor efectividad.
+
+Se puede apreciar en ambos resultados como el la precisión va disminuyendo y 
+el recobrado va aumentando a medida que aumentan la cantidad de documentos
+recuperados.
+
+Es notable además que ambos modelos presentan un comportamiento similar con
+respecto al promedio de relevancia obtenido en cada tope. Esto muestra que
+este valor por si solo no es una métrica útil. No obstante, es interesante
+analizar su comportamiento en función de la cantidad de documentos recuperados.
+
+\begin{figure}[htb]%
+	\begin{center}
+		\includegraphics[width=1.0\textwidth]{./cran_eval.png}
+	\end{center}
+	\caption{Evaluación del modelo de la base de datos de \emph{cran}}
+	\label{fig:cran-eval}
+\end{figure}
+
+
+\begin{figure}[htb]%
+	\begin{center}
+		\includegraphics[width=1.0\textwidth]{./med_eval.png}
+	\end{center}
+	\caption{Evaluación del modelo de la base de datos de \emph{med}}
+	\label{fig:med-eval}
+\end{figure}
+
+Además de la evaluación de un modelo determinando, la aplicación desarrollada
+permite mostrar una comparación entre modelos creados con diferentes
+parámetros para una misma base de datos. En la figura \ref{fig:cran-comp} se muestra
+la comparación entre dos modelos de la base de datos de \emph{cran}. Uno de ellos
+(líneas discontinuas) fue construído con una tokenización simple (split), sin
+lemtizar, sin stemming, sin quitar las palabras comunes. El otro, por otra parte,
+fue construído con utilizando el método de tokenización de \emph{nltk}, con
+stemming, lematización, quitando las palabras comunes.
+
+\begin{figure}[htb]%
+	\begin{center}
+		\includegraphics[width=1.0\textwidth]{./cran_comp.png}
+	\end{center}
+	\caption{Comparación de diferentes modelos para la base de datos de \emph{cran}}
+	\label{fig:cran-comp}
+\end{figure}
+
+Como se puede apreciar, con el nuevo modelo se obtuvo una pequeña mejora en la
+precisión y el recobrado. Se muestra también cómo el promedio de fallos disminuyó.
