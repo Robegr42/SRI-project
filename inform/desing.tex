@@ -1,5 +1,10 @@
 \section{Diseño e Implementación}\label{sec:design}
 
+Para la realización del proyecto se decidió implementar un SRI vectorial. Se
+utilizó TF-IDF (\emph{Term Frecuency - Inverse Document Frequency} por sus
+siglas en inglés) como base principal de los modelos por la sencillez de su
+implementación y el gran potencial que ofrece.
+
 Para analizar el diseño de la aplicación se realizará una descripción de forma
 \emph{top-down}. Primero se mostrarán las capas superiores comenzando por la
 interacción del usuario con la aplicación y luego se analizará de forma
@@ -29,7 +34,7 @@ interacción con la aplicación.
 	\begin{center}
 		\includegraphics[width=0.8\textwidth]{./sri_01.png}
 	\end{center}
-	\caption{Interacción del usuario con la aplicación}
+	\caption{Esquema general de interacción del usuario con Switer}
 	\label{fig:interaction}
 \end{figure}
 
@@ -61,9 +66,15 @@ configuración. Estos parametros son:
 	\item \textbf{remove\_punctuation}: Si es \emph{true} se eliminarán los
 		puntuaciones.
 	\item \textbf{lemmatization}: Si es \emph{true} se lematizarán las
-		palabras.
+		palabras. Esto significa que se tendrá en cuenta la palabra origen de
+		cada vocablo. Por ejemplo, si se lematizan la palabras \emph{playing,
+		played, etc} se tendrá en cuenta la palabra \emph{play} que es la
+		palabra origen de \emph{playing}.
 	\item \textbf{stemming}: Si es \emph{true} se agregará también la raíz de
-		cada palabra al documento.
+		cada palabra al documento. Esto es difere de la lematización en que
+		la palabra resultante no tiene por qué ser una palabra real en sí. Por
+		ejemplo, si se aplica semming a las palabras \emph{change, changing,
+		changed, etc} se puede obtener la palabra \emph{chang}.
 \end{itemize}
 
 Como se puede observar la mayoria de los parámetros están relacionados
@@ -124,3 +135,53 @@ y un peso de relevancia mínimo para los resultados.
 
 Cada resultado contiene el texo del documento, sus metadatos y la relevancia 
 obtenida de acuerdo a la consulta realizada.
+
+\subsection{Código}\label{sec:code}
+
+El proyecto está implementado completamente en Python, por ser este un lenguaje
+de programación fácil de usar y con una gran cantidad de funcionalidades. Además
+de la gran variedad de librerías existentes para el prosesamiento de texto y
+desarrollo de apliaciones.
+
+Para lograr una mejor integración del código con las diferentes aplicaciones
+implementadas (CLI y aplicación web) se implementaron las funciones principales
+en un módulo que funciona como API (\emph{Aplication Programming Interface} por sus
+siglas en inglés). Las aplicaciones con las que el usuario interactúa se
+comunincan con el API, esta a su vez realiza las operaciones necesarias en las
+bases de datos y modelos, y luego devuelve los resultados a la aplicación que
+esté usando el usuario. En la figura \ref{fig:project-structure} se muestra un
+esquema de la estructura del proyecto.
+
+\begin{figure}[htb]%
+	\begin{center}
+		\includegraphics[width=0.8\textwidth]{./sri_03.png}
+	\end{center}
+	\caption{Estructura del proyecto}
+	\label{fig:project-structure}
+\end{figure}
+
+Para mejorar la eficiencia del API cada modelo, así como los resultados de cada
+evaluación del mismo, se guardan junto con la base de datos. De esta forma el 
+modelo solo se construye una vez y se puede utilizar en cualquier aplicación
+que requiera realizar consultas sobre el mismo. Por ello, muchas de las funciones
+del API poseen un parámetro \emph{force} que permite forzar la ejecución de
+comandos a pesar de que exista la información ya guardada.
+
+Se ofrece a los usuarios desarrolladores una estructura \emph{DatabaseBuilder}.
+Esta clase se encarga de crear una nueva base de datos dado una lista de textos
+(documentos) y una lista de diccionarios del mismo tamaño (metadatos). De
+esta forma se le evita al desarrollador la tarea de crear las carpetas y archivos
+de la forma que el API las consume.
+
+De forma integrada en el proyecto se ofrecen tres bases de datos: \emph{Cranfield},
+\emph{Medline} y \emph{CISI}. Los modelos de cada una pueden ser sometidos a 
+evaluación.
+
+\subsubsection{Herramientas externas usadas}\label{sec:external-tools}
+
+Como se mencionó anteriormente, para la creación del CLI y la aplicación web se
+usaron las librerías \emph{typer} y \emph{streamlit} respectivamente. En el
+proceso de consteucción de los modelos se utilizó la librería \emph{nltk} para
+el tokenizado de textos y en la utilización de algunos recursos como un
+conjunto de palabras comunes del idioma inglés. Para la visualización de los
+resultados se utilizó la librería \emph{matplotlib}.
