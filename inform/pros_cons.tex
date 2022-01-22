@@ -1,5 +1,3 @@
-\section{Ventajas y Desventajas}\label{sec:pros_cons}
-
 Como se ha podido apreciar en el desarrollo de este trabajo, \emph{tf-idf} es
 un eficiente y simple algoritmo para hacer coincidir palabras en una consulta
 con documentos que son relevantes para esa consulta \cite{ramos}. Como cada
@@ -11,9 +9,12 @@ limitaciones.
 
 \subsubsection{Esquema de Ponderación}
 
-El modelo vectorial es muy versátil y eficiente a la hora de generar rankings
-de precisión en colecciones de gran tamaño, lo que le hace idóneo para
-determinar la equiparación parcial de los documentos. 
+El modelo vectorial es muy versátil y eficiente a la hora de generar
+\emph{rankings} de precisión en colecciones de gran tamaño, lo que le hace
+idóneo para determinar la equiparación parcial de los documentos. De esta
+forma, aunque se recuperen \emph{n} documentos relevantes a una consulta, la
+misma relevancia viene dada por una métrica de \emph{ranking} y tendremos, de
+cierta manera, ''relevancia dentro de la relevancia''
 
 \subsubsection{Coincidencia Parcial}
 
@@ -22,6 +23,11 @@ que se aproximen a los requerimientos de la consulta. De esta forma quizas se
 tengan documentos recuperados que no cumplan con todas las características de
 la consulta, sino una parte considerable de la misma, los cuales son relevantes
 a la consulta hecha.
+
+\subsubsection{Fórmula de Similitud}
+
+El uso de la fórmula del coseno como medida de similitud entre los documentos
+permite la realización de un orden parcial entre los mismos.
 
 \subsubsection{Medida de Similitud}
 
@@ -44,5 +50,14 @@ cuenta, por ejemplo, sinónimos.
 Establecer un umbral para definir que documentos son relevantes y cuales no es
 un valor que no es fijo y fiable a cada colección, o sea, para cada colección
 hay que probar y reajustar para ver que umbral se ajusta mejor y permite tener
+métricas de evaluación más compensadas.
+
+\subsubsection{Independencia de términos}
+
+El modelo asume la independencia mutua entre los términos indexados, cuando,
+como suele suceder en la actualidad, muchas veces existe una correlación
+evidente entre los propios términos. Por ejemplo, es muy probable que en
+textos científicos las palabras \emph{sujeto} y \emph{espécimen} aparezcan
+altamente relacionados.
 métricas de evaluación más compensadas.
 
