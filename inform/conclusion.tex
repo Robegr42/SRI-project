@@ -1,20 +1,30 @@
 \section{Conclusiones}\label{sec:conc}
 
 En el trabajo presentado se mostraron las características de un SRI utilizando
-una implementación de un \emph{Modelo Vectorial (tf-idf)}. Se explica su
-diseño, siendo este, uno de las esquemas más usados en la actualidad. Se
-detallan las distintas etapas del proceso desde la realización de una consulta,
-y como esta es procesada, hasta la recuperación de los documentos relevantes a
-la propia consulta. Se explican los algoritmos utilizados en la creación del
-modelo así como el uso de varias colecciones de prueba para su evaluación.
-Se debatieron, además, de forma ctítica, los principales beneficios y
-limitantes que existen en el uso de estos sistemas, los cuales permiten
-analizar posibles mejoras a realizar en futuras investigaciones.
+una implementación de un modelo vectorial (TF-IDF). Se explica su diseño,
+siendo este, uno de las esquemas más usados en la actualidad. Se detallan las
+distintas etapas del proceso desde la realización de una consulta, y cómo esta
+es procesada, hasta la recuperación de los documentos relevantes. Se explican
+los algoritmos utilizados en la creación del modelo así como el uso de varias
+colecciones de prueba para su evaluación. Se debatieron, además, de forma
+ctítica, los principales beneficios y limitantes que existen en el uso de estos
+sistemas, los cuales permiten analizar posibles mejoras a realizar en futuras
+investigaciones.
 
-La implementación del SRI mostrado dio resultados positivos, la sencillez del
-modelo hace que su eficacia pruebe la fortaleza de este algoritmo. Se
-evidencia la efectividad del modelo en la colecciones usadas, lo cual se
-demuestra en las métricas usadas en la evaluación. Sin duda alguna en
-el mundo cambiante de la RI se necesitaran de algoritmos más potentes y otras
-mejoras en estos modelos para estar a la altura de la creciente era de la
-información.
+Se pudo apreciar en la evaluación de los resultados cómo para modelos con
+diferentes resultados de efieciencia, los valores de relevancia son muy similares.
+Esto demuestra que este valor en sí no es una buena métrica para la estimación
+de la eficacia de un modelo.
+
+También se analizó el impacto de utilizar diferentes configuaciones mediante el uso
+de herramientas como lematización y stemming. Se pudo observar una pequeña mejora
+en la eficiencia de los modelos obtenidos. Sin embargo, la misma fue casi
+imperceptible. Esto da una idea de lo difícil que puede ser mejorar estos tipos
+de modelos. Por ello, para alcanzar una mayor eficiencia, los modelos en la 
+actualidad deben hacer uso de otras herramientas como retroalimentación.
+
+Finalmente, se demuestra la facilidad de utilizar Python para la creación de
+sistemas de recuperación de textos. Con la utilización de librerías como
+\emph{nltk}, \emph{numpy} y \emph{matplotlib} se pueden realizar diversos
+trabajos de análisis de texto y mostrar los resultados, de una manera eficiente
+y sencilla.
