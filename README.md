@@ -6,6 +6,10 @@ proyecto final de la asignatura Sistemas de Recuperación de Información
 modelos vectoriales (tf-idf) de recuperación de información de texto para
 diversas bases de datos.
 
+![CLI Example](cli_example.jpg)
+
+![Web App Example](web_example.jpg)
+
 
 ## Inicio rápido
 
