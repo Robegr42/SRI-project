@@ -1,10 +1,22 @@
 # Switer
 
-Switer (Swift Text Retrieval) es un CLI desarrollado en `typer` realizado como
+Switer (*Swift Text Retrieval*) es un CLI desarrollado en `typer` realizado como
 proyecto final de la asignatura Sistemas de Recuperación de Información
 (Ciencias de la computación, Universidad de la Habana). Permite la creación de
-modelos vectoriales (tf-idf) de recuperación de información de texto para
+modelos vectoriales (TF-IDF) de recuperación de información de texto para
 diversas bases de datos.
+
+## Índice
+
+1. [Vista previa](https://github.com/Robegr42/SRI-project#vista-previa)
+2. [Inicio rápido](https://github.com/Robegr42/SRI-project#inicio-r%C3%A1pido)
+3. [Cómo instalar dependencias ncesesarias](https://github.com/Robegr42/SRI-project#c%C3%B3mo-instalar-dependencias-ncesesarias)
+4. [Cómo ejecutar el programa](https://github.com/Robegr42/SRI-project#c%C3%B3mo-ejecutar-el-programa)
+5. [Comandos disponibles](https://github.com/Robegr42/SRI-project#comandos-disponibles)
+6. [Cómo añadir una base de datos nueva](https://github.com/Robegr42/SRI-project#c%C3%B3mo-a%C3%B1adir-una-base-de-datos-nueva)
+7. [Construcción del modelo](https://github.com/Robegr42/SRI-project#construcci%C3%B3n-del-modelo)
+8. [Evaluación](https://github.com/Robegr42/SRI-project#evaluaci%C3%B3n)
+9. [Abrir Switer desde streamlit](https://github.com/Robegr42/SRI-project#abrir-switer-desde-streamlit)
 
 ## Vista previa
 
@@ -62,7 +74,7 @@ python switer.py single --help
 python switer.py evaluate --help
 ```
 
-## Como añadir una base de datos nueva
+## Cómo añadir una base de datos nueva
 
 Para que la apliación pueda indexar y usar una base de datos deben existir
 los siquientes archivos:
