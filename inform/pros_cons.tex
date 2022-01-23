@@ -16,7 +16,7 @@ El modelo vectorial es muy versátil y eficiente a la hora de generar
 idóneo para determinar la equiparación parcial de los documentos. De esta
 forma, aunque se recuperen \emph{n} documentos relevantes a una consulta, la
 misma relevancia viene dada por una métrica de \emph{ranking} y tendremos, de
-cierta manera, ''relevancia dentro de la relevancia''
+cierta manera, ''relevancia dentro de la relevancia''.
 
 \subsubsection{Coincidencia Parcial}
 
@@ -24,14 +24,17 @@ La estrategia de coincidencia parcial permite la recuperación de documentos
 que se aproximen a los requerimientos de la consulta. De esta forma quizas se
 tengan documentos recuperados que no cumplan con todas las características de
 la consulta, sino una parte considerable de la misma, los cuales son relevantes
-a la consulta hecha.
+a la consulta hecha. Esto se logra teniendo en cuenta los pesos tf-idf para
+determinar la representatividad de los documentos de la colección.
 
 \subsubsection{Medida de Similitud}
 
 Se demuestra la eficacia de la \emph{fórmula del coseno} como métrica que
 ordena los documentos de acuerdo al grado de similitud con la consulta,
 aprovechádose de resultados \emph{geométrico-algebráicos} que plantean la
-similitud entre vectores de acuerdo al coseno del ángulo que ellos determinan. 
+similitud entre vectores de acuerdo al coseno del ángulo que ellos determinan.
+Se tiene en cuenta la intersección de los términos del documento con respecto
+a la consulta, por lo que la gradación de los resultados es más precisa.
 
 \subsection{Desventajas}
 
@@ -40,7 +43,10 @@ similitud entre vectores de acuerdo al coseno del ángulo que ellos determinan.
 Al ser un modelo estadístico-matemático, no tiene en cuenta la estructura
 sintáctico-semántica del lenguaje natural. En general recupera documentos
 cuando hay igualdad de palabras entre el documento y la consulta no tiene en
-cuenta, por ejemplo, sinónimos.
+cuenta, por ejemplo, sinónimos. Esto limita en gran medida la fortaleza del
+modelo, teniendo situaciones donde, por la propia estructura del lenguaje, una
+consulta con un valor semántico que otra, no tenga los resultados esperados,
+aunque se refieran a temas relacionados.
 
 \subsubsection{Umbral de Relevancia}
 
