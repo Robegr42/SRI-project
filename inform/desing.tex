@@ -15,7 +15,7 @@ De forma general el usuario tiene dos formas de interactuar con la aplicación:
 mediante una interfaz de lineas de comando en una terminal (\emph{Command Line
 Interface}, CLI por sus siglas en inglés) desarrollada usando \emph{typer} o
 mediante una interfaz gráfica desarrollada usando \emph{streamlit} (ambas
-lbrerías de Python).
+librerías de Python).
 
 Para hacer uso de la aplicación y comenzar a realizar consultas a una base de
 datos, el usuario debe realizar primero dos acciones:
@@ -63,7 +63,7 @@ configuración. Estos parametros son:
 		para suavisar el vector de la consulta.
 	\item \textbf{remove\_stopwords}: Si es \emph{true} se eliminarán las
 		palabras comunes (proporcionadas por \emph{nltk}).
-	\item \textbf{remove\_punctuation}: Si es \emph{true} se eliminarán los
+	\item \textbf{remove\_punctuation}: Si es \emph{true} se eliminarán las
 		puntuaciones.
 	\item \textbf{lemmatization}: Si es \emph{true} se lematizarán las
 		palabras. Esto significa que se tendrá en cuenta la palabra origen de
@@ -73,11 +73,11 @@ configuración. Estos parametros son:
 	\item \textbf{stemming}: Si es \emph{true} se agregará también la raíz de
 		cada palabra al documento. Esto es difere de la lematización en que
 		la palabra resultante no tiene por qué ser una palabra real en sí. Por
-		ejemplo, si se aplica semming a las palabras \emph{change, changing,
+		ejemplo, si se aplica stemming a las palabras \emph{change, changing,
 		changed, etc} se puede obtener la palabra \emph{chang}.
 \end{itemize}
 
-Como se puede observar la mayoria de los parámetros están relacionados
+Como se puede observar la mayoría de los parámetros están relacionados
 con el proceso de tokenización de los documentos, ya que esta es una de las
 operaciones más importantes para construir el modelo.
 
@@ -96,9 +96,9 @@ Primeramente se cargan los textos del archivo \emph{docs.json} de la base de
 datos. A cada texto se le agrega según la configuración los metadatos necesarios.
 
 Luego se procede a la construcción de la función que tokeniza cada documento.
-Esta función se construye en base a los parametros establecidos en el archivo
-de configuración. Una vez contruida, se extraen los las palabras (tokens) de
-cada docuemnto y se calcula la frecuencia de cada una de ellas por cada uno de
+Esta función se construye en base a los parámetros establecidos en el archivo
+de configuración. Una vez contruida, se extraen las palabras (tokens) de
+cada documento y se calcula la frecuencia de cada una de ellas por cada uno de
 los textos. Posteriormente se construye el vocabulario del modelo con el
 conjunto de todas las palabras.
 
@@ -124,13 +124,13 @@ Para procesar la consulta se utiliza la misma función de tokenización que se
 utilizó para construir el modelo. Las palabras que no estén en el vocabulario
 son ignoradas. Se calcula el vector de consulta y luego utilizando la operación
 de coseno entre vectores se calcula la relevancia de cada documento con
-respecto a la consulta. Una vez calculada las relevancias, se organiza los
+respecto a la consulta. Una vez calculadas las relevancias, se organizan los
 documentos de mayor a menor según este valor y se devuelven en este orden.
 
 En el caso del CLI proporcionado los documentos se van devolviendo uno a uno
 y en cada momento el usuario puede especificar si quiere ver el siguiente
 documento o no. En la aplicación web desarrollada con \emph{streamlit} en cada
-consulta el usuario puede establecer un numero máximo de documentos a mostrar
+consulta el usuario puede establecer un número máximo de documentos a mostrar
 y un peso de relevancia mínimo para los resultados.
 
 Cada resultado contiene el texo del documento, sus metadatos y la relevancia 
@@ -181,7 +181,7 @@ evaluación.
 
 Como se mencionó anteriormente, para la creación del CLI y la aplicación web se
 usaron las librerías \emph{typer} y \emph{streamlit} respectivamente. En el
-proceso de consteucción de los modelos se utilizó la librería \emph{nltk} para
+proceso de construcción de los modelos se utilizó la librería \emph{nltk} para
 el tokenizado de textos y en la utilización de algunos recursos como un
 conjunto de palabras comunes del idioma inglés. Para la visualización de los
 resultados se utilizó la librería \emph{matplotlib}. Para el trabajo con los datos

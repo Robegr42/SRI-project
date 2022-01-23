@@ -16,20 +16,20 @@ con varias colecciones de pruebas, las cuales contienen lo siguiente:
     binario) 
 \end{enumerate}
 
-Sobre la estructura de las colecciones utilizadas y descritas con anterioridad,
-trabaja el modelo, se realizan comparaciones y cálaculo de métricas que
+Sobre la estructura de las colecciones utilizadas y descritas con anterioridad
+trabaja el modelo, se realizan comparaciones y cálculo de métricas que
 caracterizan la efectividad del mismo.
 
 \subsection{Métricas empleadas}\label{sec:metrics}
 
 Para realizar un análisis de la efectividad de cada modelo se emplearon 
-dversas métricas. Primero, se define como:
+diversas métricas. Primero, se define como:
 
 \begin{itemize}
 	\item RR: Documentos relevantes recuperados.
-	\item RI: Documentos irelevantes recuperados.
+	\item RI: Documentos irrelevantes recuperados.
 	\item NR: Documentos relevantes no recuperados.
-	\item NI: Documentos irelevantes no recuperados.
+	\item NI: Documentos irrelevantes no recuperados.
 	\item P: Precisión.
 	\item R: Recobrado.
 \end{itemize}
@@ -103,8 +103,8 @@ permite mostrar una comparación entre modelos creados con diferentes
 parámetros para una misma base de datos. En la figura \ref{fig:cran-comp} se muestra
 la comparación entre dos modelos de la base de datos de \emph{cran}. Uno de ellos
 (líneas discontinuas) fue construído con una tokenización simple (split), sin
-lemtizar, sin stemming, sin quitar las palabras comunes. El otro, por otra parte,
-fue construído con utilizando el método de tokenización de \emph{nltk}, con
+lematizar, sin stemming, sin quitar las palabras comunes. El otro, por otra parte,
+fue construído utilizando el método de tokenización de \emph{nltk}, con
 stemming, lematización, quitando las palabras comunes.
 
 \begin{figure}[htb]%
