@@ -6,6 +6,22 @@ proyecto final de la asignatura Sistemas de Recuperación de Información
 modelos vectoriales (tf-idf) de recuperación de información de texto para
 diversas bases de datos.
 
+
+## Inicio rápido
+
+```shell
+# Instalar dependencias
+pip install -r requirements.txt
+# Construir base de datos Cran
+python switer.py build-db cran
+# Construir el modelo para la base de datos Cran usando una configuración
+python switer.py build-model cran --config adv_config.json
+# Comenzar a realizar consultas sobre la base de datos de Cran
+python switer.py --databse cran
+# Opcional: Evaluar el modelo de Cran
+python switer.py evaluate cran
+```
+
 ## Cómo instalar dependencias ncesesarias
 
 ```shell

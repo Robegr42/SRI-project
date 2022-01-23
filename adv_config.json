@@ -1,0 +1,9 @@
+{
+    "tokenization_method": "nltk",
+    "include_metadata": [],
+    "query_alpha_smoothing": 0.0,
+    "remove_stopwords": true,
+    "remove_punctuation": true,
+	"lemmatization": true,
+    "stem": false
+}
