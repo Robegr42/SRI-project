@@ -16,7 +16,7 @@ El modelo vectorial es muy versátil y eficiente a la hora de generar
 idóneo para determinar la equiparación parcial de los documentos. De esta
 forma, aunque se recuperen \emph{n} documentos relevantes a una consulta, la
 misma relevancia viene dada por una métrica de \emph{ranking} y tendremos, de
-cierta manera, ''relevancia dentro de la relevancia''.
+cierta manera ''relevancia dentro de la relevancia''.
 
 \subsubsection{Coincidencia Parcial}
 
@@ -24,7 +24,7 @@ La estrategia de coincidencia parcial permite la recuperación de documentos
 que se aproximen a los requerimientos de la consulta. De esta forma quizas se
 tengan documentos recuperados que no cumplan con todas las características de
 la consulta, sino una parte considerable de la misma, los cuales son relevantes
-a la consulta hecha. Esto se logra teniendo en cuenta los pesos tf-idf para
+a la consulta hecha. Esto se logra teniendo en cuenta los pesos TF-IDF para
 determinar la representatividad de los documentos de la colección.
 
 \subsubsection{Medida de Similitud}
@@ -54,6 +54,9 @@ Establecer un umbral para definir que documentos son relevantes y cuales no es
 un valor que no es fijo y fiable a cada colección, o sea, para cada colección
 hay que probar y reajustar para ver que umbral se ajusta mejor y permite tener
 métricas de evaluación más compensadas.
+
+Este aspecto se pudo apreciar en la sección anterior al evaluar los modelos
+realizados para las bases de datos de \emph{Cran} y \emph{Medline}.
 
 \subsubsection{Independencia de términos}
 
